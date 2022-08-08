@@ -1,0 +1,222 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+using ll = long long;
+template<typename T> using p = pair<T, T>;
+template<typename T> using vec = vector<T>;
+template<typename T> using deq = deque<T>;
+
+const int INF = 1e9;
+const ll llINF = 1e18;
+const int MOD = 1e9+7;
+const double eps = 1e-6;
+const double PI = acos(-1);
+
+double fcmp(double a, double b, double eps = 1e-6) {
+    if (fabs(a-b) < eps) return 0;
+    return a - b;
+}
+
+ll n, m, ans = 0;
+deq<deq<bool>> vis;
+vec<int> cx(3), cy(3), t(3);
+int dx[4] = {0, 1, 0, -1};
+int dy[4] = {1, 0, -1, 0};
+
+
+void dfs(int x,int y,int now){//now:moves
+    if(x==0 && y==1 && now==n*m){
+        ans++;
+        
+       // cout << "wrong1 " << ans << endl;
+        return;
+    }else if(x==0 && y==1){
+            
+       // cout << "wrong2 " << ans << endl;
+    
+        return;
+    }
+
+    //cut
+
+    for(int i=0;i<3;i++){
+
+        if(now == t[i] && !(x==cx[i] && y==cy[i])){
+         //   cout << "wrong3 " << ans << endl;
+            return;//wrong hole
+        }
+        if( (now<t[i]) && ((t[i]-now) < ( abs(x-cx[i]) + abs(y-cy[i]) ) ) ){
+           // cout << "wrong4 " << ans << endl;
+            return;//SP
+        }
+    }
+
+    //two component => bfs can't go whole graph
+/*
+    for (int i = 0; i < 4; i++) {
+        int nx = x + dx[i], ny = y + dy[i];
+        
+        if (nx < 0 or nx >= n) continue;
+        if (ny < 0 or ny >= m) continue;
+        
+        if (!vis[nx][ny]) {
+            int _size = 0;
+            
+            deq<deq<bool>> exist(n, deq<bool>(m));
+            queue<p<int>> que;
+            exist[x][y] = true;
+            que.emplace(nx, ny);
+            
+            int tx, ty;
+            while (!que.empty()) {
+                tie(tx, ty) = que.front();
+                que.pop();
+                
+                if (exist[tx][ty])
+                    continue;
+                    
+                exist[tx][ty] = true;
+                _size++;
+                
+                for (int k = 0; k < 4; k++) {
+                    int nnx = tx + dx[k], nny = ty + dy[k];
+                    
+                    if (nnx < 0 or nnx >= n) continue;
+                    if (nny < 0 or nny >= m) continue;
+                    
+                    if (!exist[nnx][nny] and !vis[nnx][nny])
+                        que.emplace(nnx, nny);
+                }
+            }
+           // cout << now << " " << _size << endl;
+            if (now + _size != n*m) {
+                // devec2(vis);
+             //   cout << x << ' ' << y << endl;
+                return;
+            }
+            
+            break;
+        }
+    }
+*/
+    for(int i=0;i<4;i++){
+
+        int tmpx = x+dx[i];
+        int tmpy = y+dy[i];
+
+        if(tmpx < 0 || tmpx >=n || tmpy <0 || tmpy >=m){
+            continue;
+        }
+
+        if(!vis[tmpx][tmpy]){
+            int movess=0;
+
+            deq<deq<bool>> exist(n,deq<bool>(m));
+            queue<p<int>>que;
+            exist[x][y] = true;
+            que.emplace(tmpx,tmpy);
+
+            int tx,ty;
+            while(!que.empty()){
+                tie(tx,ty) = que.front();
+                que.pop();
+
+                if(exist[tx][ty]){
+                    continue;
+                }
+
+                exist[tx][ty]=true;
+                movess++;
+
+                for(int j=0;j<4;j++){
+                    
+                    int txx = tx+dx[j];
+                    int tyy = ty+dy[j];
+
+                    if(txx < 0 || txx >=n || tyy <0 || tyy >=m){
+                        continue;
+                    }
+
+                    if(!exist[txx][tyy] && !vis[txx][tyy]){
+                        que.emplace(txx,tyy);
+                    }
+                }
+            }
+      //      cout << now <<" "<< movess << endl;
+
+            if(now + movess != n*m) {
+//                cout << x << ' ' << y << endl;
+        //        cout << "wrong5 " << ans << endl;
+                return;
+            }
+
+            break;
+        }
+    }
+
+    //degree
+    for(int i=0;i<n;i++){
+        for(int j=0;j<m;j++){
+            if(vis[i][j] || (i==0 && j==1)) continue;
+            int cnt = 0;
+            for(int k=0;k<4;k++){
+                int tmpx = i+dx[k];
+                int tmpy = j+dy[k];
+
+                if(tmpx < 0 || tmpx >=n || tmpy <0 || tmpy >=m) continue;
+
+                if(!vis[tmpx][tmpy])cnt++;
+            }
+
+            if(cnt<=1){
+                if(i!=x || j!=y) {
+                 //   cout << "wrong6 " << ans << endl;
+                    return;
+                }
+            }
+        }
+    }
+//dfs
+    vis[x][y] = 1;
+    for(int i=0;i<4;i++){
+        int tmpx = x+dx[i];
+        int tmpy = y+dy[i];
+
+        if(tmpx < 0 || tmpx >=n || tmpy <0 || tmpy >=m){
+            continue;
+        }
+
+        if(!vis[tmpx][tmpy]) {
+            dfs(tmpx,tmpy,now+1);
+        }
+    }
+    vis[x][y] = 0;
+   // ans++;
+}
+
+int main(){
+    int kase = 0;
+    while(cin >> n >> m){
+        if(!n)break;
+
+        ans = 0;
+
+        vis.resize(n);
+        for(int i=0;i<n;i++){
+            vis[i].resize(m);
+            for(int j=0;j<m;j++){
+                vis[i][j] = 0;
+            }
+        }
+
+        for(int i=0;i<3;i++){
+            cin >> cx[i] >> cy[i];
+            t[i] = n*m*(i+1)/4;
+        }
+
+        dfs(0,0,1);
+
+        kase++;
+        cout << "Case " << kase << ": " << ans << endl;
+    }
+}
