@@ -1,0 +1,107 @@
+#include<bits/stdc++.h>
+using namespace std;
+#define F first
+#define S second
+#define vec vector
+#define eb emplace_back
+#define al(x) x.begin(), x.end()
+double fcmp(double a, double b, double eps = 1e-9) {
+    if (fabs(a-b) < eps) return 0;
+    return (a > b)*2-1;
+}
+const int INF = 0x3f3f3f3f;
+
+set<int> s;
+vec<int> V;
+int val[(1<<21)+1];//1~2^20+1 = 2^20,1base
+int T[30];
+int ans = 0;
+
+void init() {
+	ans = 0;
+	for(auto &e:s) val[e] = 0;
+	val[1] = 100;
+	for(int i=0;i<30;i++) T[i] = INF;
+	V.clear();
+	s.clear();
+}
+
+
+int height(int a){
+    int h = 0;
+    while(a > 0){
+        h++;
+        a>>=1;
+    }
+    return h;
+}
+
+bool sameh(int a,int b){
+    return height(a) == height(b);
+}
+
+bool isleaf(int a){
+    return ((s.find(a*2)==s.end())&&(s.find(a*2+1)==s.end()));
+}
+
+void dfs(int now,int total){//共total=V個,目前第 now 個
+    if(now == total ){
+        ans++;
+        return;
+    }
+    int nowid = V[now];
+    int preid = V[now - 1];
+    int nxtid = V[now + 1];
+    int parentval = val[nowid / 2];
+    int lb=1,ub;
+    if(sameh(nowid,preid)) lb = max(lb,val[preid]);//同樣高lowerbound取最大
+    ub = val[T[height(nowid)-1]];//上層最左邊value
+    //cout << ub << endl;
+    for(int i=lb;i<=ub;i++){
+        int Lval=i;
+        int Rval=parentval-i;
+        //cut
+        if(Lval > Rval) break;
+        if(Rval > ub)continue;
+        if(!isleaf(nowid) && Lval==1)continue;
+        if(!isleaf(nxtid) && Rval==1)continue;
+        
+        val[nowid] = Lval;
+        val[nxtid] = Rval;
+        dfs(now+2,total);//now,nxt are done
+    }
+
+}
+
+int main(){
+    int n,kase=0;
+    string str;
+    while(cin >> n){
+        if(n == 0) break;
+        for(int i=0;i<(1<<21)+1;i++){
+            val[i] = 0;
+        }
+        init();
+        for(int i=0;i<n;i++){
+            cin >> str;
+            int now = 1;//root
+            for(int j=0;j<str.size();j++){//010 -> 1010
+                int nxt = now*2 +(str[j] - '0');
+                s.insert(nxt);//10,101,1010
+                s.insert(now);//RB-tree,,1
+                T[height(now)] =min(now,T[height(now)]);//每層最左的
+                T[height(nxt)] =min(nxt,T[height(nxt)]);
+                now = nxt;
+            }
+        }
+        for(auto &e:s){
+                V.emplace_back(e);
+                //cout<<e;
+        }
+        dfs(1,V.size());
+        kase++;
+        cout << "Case " << kase<<": "<< ans << endl;
+    }
+}
+
+
