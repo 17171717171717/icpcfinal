@@ -1,0 +1,119 @@
+#include<bits/stdc++.h>
+using namespace std;
+#define X real()
+#define Y imag()
+#define eb emplace_back
+const double eps = 1e-6;
+int fcmp(double a, double b){//1:a>b 0: a=b -1:a<b
+    if(abs(a-b) < eps){
+        return 0;
+    }
+    return (a > b) * 2 - 1;
+}
+
+double pi = acos(-1);
+double hpi = acos(-1) / 2.0;
+int main(){
+    int N,theta,kase=0;
+    //cout << pi;
+    while (cin >> N >> theta){
+        if(N==0 && theta == 0) break;
+        kase++;
+		
+
+
+        vector<complex<int>> points;
+        points.eb(0,0);
+        int x,y;
+        for(int i=0;i<N;i++){
+            cin >> x >> y;
+            points.eb(x,y);
+        }
+
+        if(theta == 0){
+            cout << "Case " << kase << ": ";
+            cout << "Acceptable as proposed"<<endl<<endl;
+            continue;
+        }
+
+        //algo
+
+
+        pair<double,double>clock={0,2*pi};
+        pair<double,double>negclock={0,2*pi};
+
+
+
+        for(int i=0;i<N;i++){
+            int dx = points[i+1].X - points[i].X;
+            int dy = points[i+1].Y - points[i].Y;
+            double nowtheta = atan2(dy,dx);
+            //cout << nowtheta << endl;
+            //0~90 90~180 180~270 270!360
+            //x,y axis turn negclock hpi degree
+            pair<double,double>nowclock;
+            pair<double,double>nownegclock;
+            if(nowtheta>=0.0 && nowtheta <= hpi){//2
+                nowclock={0,nowtheta+hpi};
+                nownegclock={0,hpi-nowtheta};
+            }
+            else if(nowtheta>hpi && nowtheta <= (pi+eps)){//3
+                nowclock={nowtheta - hpi,nowtheta - hpi + pi};
+                nownegclock={hpi + pi - nowtheta,hpi + pi - nowtheta +pi};
+            }
+            else if(nowtheta<0.0 && nowtheta >= -hpi){//1,-π/2 < θ < 0
+                nowclock={0,hpi+nowtheta};
+                nownegclock={0,hpi-nowtheta};//nowtheta<0 -> hpi+|nowtheta|
+            }
+            else if(nowtheta < -hpi && nowtheta >= -(pi+eps)){//4,-π < θ < -π/2
+                nowclock={hpi + pi + nowtheta, hpi + 2 * pi + nowtheta};
+                nownegclock={-nowtheta - hpi, -nowtheta - hpi + pi};
+            }
+
+            clock = { max(nowclock.first,clock.first) , min(nowclock.second,clock.second)};
+            negclock = { max(negclock.first,nownegclock.first),min(nownegclock.second,negclock.second)};
+            /*cout << endl;
+            cout << clock.first <<" " <<clock.second<<endl;
+            cout << negclock.first <<" "<< negclock.second<<endl; */
+        }
+
+        //which direction
+        bool clockans=true,negclockans=true;
+        if (fcmp(clock.first, clock.second) == 1)// left > right return true -> unreasonable
+            clockans = false;
+        if (fcmp(negclock.first , negclock.second) == 1)
+            negclockans = false;
+        cout << "Case " << kase << ": ";
+        //output
+        clock.first = clock.first / pi * 180.0;
+        clock.second = clock.second / pi * 180.0;
+        negclock.first = negclock.first / pi * 180.0;
+        negclock.second = negclock.second / pi * 180.0;
+        cout << fixed << setprecision(2);
+        if (fcmp(clock.first, 0.0)== 0 || fcmp(negclock.first, 0.0) == 0)//no need to rotate 
+        {
+            cout << "Acceptable as proposed";
+        }
+        else{
+            if(clockans && negclockans){
+                if(fcmp(clock.first, negclock.first) <= 0){//choose smaller > clockans
+                    cout << "Acceptable after clockwise rotation of " << clock.first << " degrees";
+                }
+                else{
+                    cout << "Acceptable after counterclockwise rotation of " << negclock.first << " degrees";
+                }
+            }
+            else if(clockans){
+                cout << "Acceptable after clockwise rotation of " << clock.first << " degrees";
+            }
+            else if(negclockans){
+                cout << "Acceptable after counterclockwise rotation of " << negclock.first << " degrees";
+            }
+            else{
+                cout << "Unacceptable";
+            }
+        }
+        cout << endl << endl;
+    }
+    return 0;
+}
