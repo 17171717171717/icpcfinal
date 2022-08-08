@@ -1,0 +1,169 @@
+#include<bits/stdc++.h>
+#define pii pair<int,int>
+#define mn 1005
+#define F first
+#define S second
+using namespace std;
+
+string g[205];//every line
+bool vis[205][205];
+int H ,W;
+string ans;
+int hole=0;
+int kase = 0;
+int dx[4] = {0 ,1 ,0, -1};
+int dy[4] = {1 ,0 ,-1 ,0};
+
+bool inborder(int x,int y){
+    if(0 <= x && x<=H+1 && 0<=y && y<= 4*W+1) return 1;
+    else return 0;
+}
+
+void prebfs(pii now){
+
+    queue<pii> q;
+    q.push(now);
+
+    while(!q.empty()){
+
+        pii tmp = q.front();
+        q.pop();
+
+        if(vis[tmp.F][tmp.S]) continue;
+        vis[tmp.F][tmp.S] = true;
+
+        for(int i=0;i<4;i++){
+
+            int x=tmp.F+dx[i];
+            int y=tmp.S+dy[i];
+
+            if(inborder(x,y) && (!vis[x][y]) && g[x][y] == '0'){
+                q.push({x,y});
+            }
+
+        }
+    }
+}
+
+void bfs1(pii now){
+
+    queue<pii> q;
+    q.push(now);
+
+    while(!q.empty()){
+
+        pii tmp = q.front();
+        q.pop();
+
+        if(vis[tmp.F][tmp.S]) continue;
+        vis[tmp.F][tmp.S] = true;
+
+        for(int i=0;i<4;i++){
+
+            int x=tmp.F+dx[i];
+            int y=tmp.S+dy[i];
+
+            if(inborder(x,y) && !vis[x][y] && g[x][y] == '0'){
+                hole++;//inside 0
+                prebfs({x,y});
+            }
+
+            if(inborder(x,y) && (!vis[x][y]) && g[x][y] == '1'){
+                q.push({x,y});//bfs 1
+            }
+
+        }
+
+    }
+}
+
+int main(){
+
+    map<int,string>t;
+    map<char,string>h;
+    t[0]="W";
+    t[1]="A";
+    t[2]="K";
+    t[3]="J";
+    t[4]="S";
+    t[5]="D";
+
+    h['0']="0000";
+    h['1']="0001";
+    h['2']="0010";
+    h['3']="0011";
+    h['4']="0100";
+    h['5']="0101";
+    h['6']="0110";
+    h['7']="0111";
+    h['8']="1000";
+    h['9']="1001";
+    h['a']="1010";
+    h['b']="1011";
+    h['c']="1100";
+    h['d']="1101";
+    h['e']="1110";
+    h['f']="1111";
+
+    //while(cin >> H >> W){//row<=200 col<=50
+        while(1){
+        cin >> H >> W;
+        if(H==0 && W==0)break;
+        getchar(); // take \n away
+
+        memset(vis,false,sizeof(vis));
+        for(int i=0;i<205;i++){
+            g[i] = "";
+        }
+        ans = "";
+        string tmp = "";
+        for(int i=0;i<4*W+2;i++){//50 to 200+2
+            tmp += "0";//add 0 row
+        }
+        g[0] = tmp;
+
+
+        string str;
+        for(int i = 1; i <= H; i++){
+            tmp = "";
+            getline(cin,str);//get a whole row
+
+            for(int j=0;j<W;j++){
+                tmp += h[str[j]];//hex to binary
+            }
+
+            g[i] = "0" + tmp + "0"; //need add 0 column
+        }
+
+        tmp = "";
+ 
+        for(int i=0;i<4*W+2;i++){
+            tmp +="0";
+        }
+
+        g[H+1] = tmp;
+       
+        /*
+        for(int i=0 ; i<=n+1 ; i++)
+        {
+            cout << g[i] << endl;
+        }
+        */
+
+        prebfs({0,0});
+
+        for(int i=1;i<=H;i++){
+            for(int j=1;j<=4*W;j++){
+                if(g[i][j]=='1' && (!vis[i][j]) ) {
+                    hole = 0;
+                    bfs1(make_pair(i,j));
+                    ans+=t[hole];               
+                    }
+            }
+        }
+
+        sort(ans.begin(),ans.end());
+        kase++;
+        cout <<"Case " << kase << ": " << ans <<endl;
+    }
+}
