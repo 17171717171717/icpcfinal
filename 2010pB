@@ -1,0 +1,179 @@
+#include <bits/stdc++.h>
+using namespace std;
+#define ll long long
+const int INF = 0x3f3f3f3f;
+double fcmp(double a, double b, double eps = 1e-6) {
+    if (fabs(a-b) < eps) return 0;
+    return a - b;
+}
+
+bool ok(double src,double min,double max){
+    return ( fcmp(src,min)>=0 && fcmp(max,src) )>=0;
+}
+bool clamp(double src, double min, double max) {
+    return fcmp(src, min) >= 0 and fcmp(max, src) >= 0;
+}//in the middle
+
+int deco(vector<int> src,int now){
+    if(now+4>=src.size()) return -1;
+
+    int ans = 0, base = 16;//1xxxx
+
+    for(int i=0;i<5;i++){
+        ans += base * src[now+i];
+        base/=2;
+    }
+    switch(ans){
+        case 1:
+            return 0;
+        case 17:
+            return 1;
+        case 9:
+            return 2;
+        case 24:
+            return 3;
+        case 5:
+            return 4;
+        case 20:
+            return 5;
+        case 12:
+            return 6;
+        case 3:
+            return 7;
+        case 18:
+            return 8;
+        case 16:
+            return 9;
+        case 4:
+            return 10;//-
+        case 6:
+            return 11;//startstop
+    }
+    return -1;
+}
+
+
+string decode(vector<int> code){
+    if(deco(code,0)!=11){//start
+        reverse(code.begin(),code.end());//start
+        if(deco(code,0)!=11)return "bad code";
+ //       if(deco(code,0)!=11)return "bad code";
+    }
+
+    vector<int>ans;
+    for(int i=0;i<code.size();i+=6){
+        ans.emplace_back(deco(code,i));
+
+        if(ans.back()==-1) return "bad code";
+        if(i+5<code.size() && code[i+5] == 1) return "bad code";
+/*                if(ans.back()==-1) return "2bad code";
+        if(i+5<code.size() && code[i+5] == 1) return "3bad code";*/
+    }
+
+    if(ans.back() != 11) return "bad code";
+//    if(ans.back() != 11) return "4bad code";
+    int C=0,K=0,n=ans.size()-4;
+    for(int i=1;i<ans.size()-3;i++){
+        if(ans[i] == 11) return "bad code";        
+        //if(ans[i] == 11) return "5bad code";
+ 
+        //(∑ni=1((n − i) mod 10 + 1) × w(ci))mod 11
+        //(∑+1i=1((n − i + 1) mod 9 + 1) × w(ci))mod 11)
+        C += (((n - i) % 10) + 1) * ans[i];
+        K += (((n - i + 1) % 9) + 1) * ans[i];
+    }
+
+    C%=11;
+    (K+=C)%=11;
+
+    if(C != ans[ans.size()-3]) return "bac C";
+    else if(K != ans[ans.size()-2]) return "bad K";
+
+    string str(n,0);
+   // cout << str << endl;
+    for(int i=1;i<ans.size()-3;i++){
+        str[i-1] = (ans[i]==10 ? '-' : ans[i]+'0');//ASC
+    }
+   // cout << str << endl;
+
+    return str;
+} 
+
+int main(){
+    int n,kase=0;
+    while(cin >> n){
+        if(n==0)break;
+        vector<int>code(n);
+        for(int i=0;i<n;i++){
+            cin >> code[i];
+        }
+
+        int nmin  = INF;
+        int nmax  = 0;
+        int wmin = INF;
+        int wmax = 0;
+        vector<int>narrow,wide;
+
+        for(int i=0;i<n;i++){
+            //cout << i << ' ' << code[0]/1.1 << ' ' << code[0]/0.9 << endl;
+            if (clamp(code[i],code[0]/1.05*0.95,code[0]/0.95*1.05)){
+                narrow.emplace_back(code[i]);
+                nmin=min(nmin,code[i]);
+                nmax=max(nmax,code[i]);
+            }else if (fcmp(code[0]/1.05*0.95,code[i])>0){
+                narrow.clear();//it's not in the border
+               // cout << "smtg happen" <<endl;
+                break;
+            }else{
+                wide.emplace_back(code[i]);
+                wmin=min(wmin,code[i]);
+                wmax=max(wmax,code[i]);
+            }
+        }
+      /*  cout << "narrow"<< " " <<endl;
+        for(auto i:narrow)
+        	cout << i << " " ;
+        cout << endl << "wide :";
+        
+        for(auto i:wide)
+        	cout << i << " " ;
+        cout << endl;
+    	*/
+
+        pair<double,double> wwran(wmax / 1.05 ,wmin / 0.95);
+        pair<double,double> nran(nmax / 1.05 ,nmin / 0.95);
+       /* cout << wmax << " MIN: " << wmin <<endl;
+        cout << nmax << " MIN  " << nmin << endl; 
+        */
+        kase++;
+        
+        if(narrow.empty() or wide.empty() or fcmp(wwran.first, wwran.second) > 0 or fcmp(nran.first, nran.second) > 0 ){
+            cout << "Case " << kase << ": bad code" << endl;
+            /*if(wide.empty()) 
+            	cout <<"1"<<endl;
+            if(narrow.empty()) 
+            	cout <<"2"<<endl;
+            if(fcmp(wwran.first,wwran.second)>0)
+            	cout <<"3"<<endl;
+            if(fcmp(nran.first,nran.second)>0 )
+            	cout <<"4"<<endl;*/
+        }else if(fcmp(wwran.first/2,nran.second)>=0 || fcmp(nran.first,wwran.second/2)>=0){
+            cout << "Case " << kase << ": bad code" << endl;
+        }else{
+            double base;
+            if (clamp(nran.first, wwran.first/2, wwran.second/2))//in the middle
+                base = nran.first;
+            else if (clamp(nran.second, wwran.second/2, wwran.first/2))
+                base = nran.second;
+            else
+                base = wwran.first/2;
+
+            int tmp = code[0];
+            for(int j=0;j<n;j++){
+                if(clamp(code[j],base*0.95,base*1.05)) code[j] = 0;
+                else code[j] = 1;
+            }  
+            cout << "Case " << kase << ": " << decode(code) << endl;
+        }
+    }
+}
