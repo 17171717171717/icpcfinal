@@ -1,0 +1,84 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+#define vec vector
+
+int B,M;
+
+int main(){
+    int kase=0;
+    while(cin >> B >> M){
+        if(B ==0 && M==0)break;
+        vec<vec<bool>>g(2*B,vec<bool>(2*B,false));// even for 'yes', odd for 'no'
+        int bs,bn;
+        char c;
+        for(int i=0;i<M;i++){
+            cin >> bn ;
+            if(bn <= 2){//build every vote
+                for(int j=0;j<bn;j++){
+                    cin >> bs >> c;
+                    bs--;
+                    if(c=='y') g[bs*2+1][bs*2] = true;//n->y
+                    else g[bs*2][bs*2+1] = true;
+                }
+            }
+            else{//if 4,build 3 3 3 4/ 3,all need to be built
+                vec<pair<int,bool>>bbuf(bn);
+                for(int j=0;j<bn;j++){
+                    cin >> bs >> c;
+                    bbuf[j] = make_pair(bs-1,c=='y');
+                }
+
+                for(int j=0;j<bn;j++){
+                    int bill,bill_;
+                    bool acbill,acbill_;
+                    tie(bill,acbill) = bbuf[j];
+//every minister need to build
+                    if(acbill){//y
+                        for(int k=0;k<bn;k++){
+                            if(j==k) continue;
+                            tie(bill_,acbill_) = bbuf[k];
+                            if(acbill_) g[bill*2+1][bill_*2] = true;//y to n
+                            else g[bill*2+1][bill_*2+1] = true;//y to y
+                        }
+                    }
+                    else{//n
+                        for(int k=0;k<bn;k++){
+                            if(j==k) continue;
+                            tie(bill_,acbill_) = bbuf[k];
+                            if(acbill_) g[bill*2][bill_*2] = true;//n to y
+                            else g[bill*2][bill_*2+1] = true;//n to n
+                        }
+                    }
+                }
+            }    
+        }
+//algo for 2sat
+        for(int i=0;i<2*B;i++){
+            for(int j=0;j<2*B;j++){
+                for(int k=0;k<2*B;k++){
+                    g[j][k] = g[j][k] || (g[j][i]&&g[i][k]);
+                }
+            }
+        }
+
+        bool ok = true;
+        string ans;
+        for(int i=0;i<B;i++){
+            if(g[i*2][i*2+1] && g[i*2+1][i*2]){// they could arrive each other
+                ok = false;
+                break;
+            }
+            if(g[i*2][i*2+1]) ans+="n"; //1y -> 1n
+            else if(g[i*2+1][i*2]) ans+="y"; // 1n->1y
+            else ans+="?"; // they couldn't
+        }
+
+        kase++;
+		if (ok)
+			cout << "Case " << kase << ": " << ans << endl;
+		else
+			cout << "Case " << kase << ": impossible" << endl;
+                
+    }
+}
