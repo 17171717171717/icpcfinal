@@ -1,0 +1,94 @@
+#include<bits/stdc++.h>
+using namespace std;
+
+#define eb emplace_back
+const double eps = 1e-6;
+const int INF = 0x3f3f3f3f;
+
+
+
+int main(){
+    int N,M,kase=0;
+    while(cin>>N >> M){
+        if(N ==0 && M==0 )break;
+        int b;
+        vector<int>per(N);
+        vector<int>sz(N);
+        vector<tuple<int,int,int>>nse;//number,stbyte,edbyte
+        vector<set<pair<int,int>>>buffer(N);
+
+        for(int i=0;i<N;i++){
+            cin >> b;
+            sz[i] = b;
+            per[i] = i;
+        }
+
+        for(int i=0;i<M;i++){
+            int id,st,ed;
+            cin >> id >> st >> ed;
+            id--;
+            nse.eb(id,st,ed);
+        }
+        //algo
+        int ans = INF;
+
+        do{
+            buffer.clear();
+            buffer.resize(N);
+            int pid = 0;
+            int stbyte = 1;
+            int anssize = 0;
+            int buffersize = 0;
+
+            for(int i=0;i<M;i++){
+                int id,st,ed;
+                tie(id,st,ed) = nse[i];
+                if(id == per[pid] && st == stbyte){
+                    if(ed == sz[id]){//end
+                        pid++;
+                        stbyte=1;
+                        if(pid >= N) continue;
+                    }
+                    else{//not end
+                        stbyte = ed + 1;
+                    }
+                    if(pid >= N) continue;
+                    id = per[pid];//結束就是下一個，還沒就是他本人
+                    set<pair<int,int>> &myS = buffer[id];
+                    set<pair<int,int>>::iterator it;
+                    while(!myS.empty() && (it=myS.begin())->first == stbyte){//buffer[id]的最前面的(最小的st)
+                        stbyte = it->second + 1;
+                        buffersize -= (it->second - it->first + 1 );
+                        myS.erase(it);
+                        if((stbyte-1) == sz[id]){
+                            pid++;//下個permu
+                            if(pid>=N) break;
+                            id = per[pid];
+                            myS = buffer[id];
+                            stbyte=1;
+                        }
+                    }
+                }
+                else{
+                    buffer[id].emplace(st,ed);
+                    buffersize = buffersize +(ed-st+1);
+                  //  cout << "buffsize " << buffersize << endl;
+                    anssize = max(buffersize,anssize);
+                }
+               // cout <<"anssize: "<< anssize << endl;
+            }
+
+
+
+            ans = min(anssize,ans);
+          //  cout << "minans " << ans << endl;
+        }while(next_permutation(per.begin(),per.end()));
+
+
+
+        kase++;
+        cout<< "Case "<<kase<<": "<<ans<<endl<<endl;
+
+    }
+    return 0;
+}
