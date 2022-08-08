@@ -1,0 +1,66 @@
+#include<bits/stdc++.h>
+using namespace std;
+#define INF 0x3f3f3f3f
+
+int n;
+pair<int,int>nodes[105];
+vector<int> g[105];
+
+bool cmp(pair<int,int>a , pair<int,int>b){
+    if((a.first-a.second) != (b.first-b.second))//alive more ,>=0
+        return (a.first-a.second) > (b.first-b.second);//true=>a be the front
+    return a.second > b.second;
+}
+
+pair<int,int>dfs(int now,int from){
+    vector<pair<int,int>>branch;
+    for(int i=0 ; i<g[now].size() ; i++){
+        int adj = g[now][i];
+        if(adj == from) continue;
+        branch.push_back(dfs(adj,now));
+    }
+    sort(branch.begin(),branch.end(),cmp);
+    int need,lost;
+    need = nodes[now].first;
+    lost = nodes[now].second;
+    for(int i=0;i<branch.size();i++){
+        need = max(need,lost + branch[i].first);
+        lost = lost + branch[i].second;
+    }
+    return make_pair(max(need,lost),lost);
+}
+
+int main(){
+    int kase=0;
+    while(cin>>n){
+        if(n==0)break;
+        int a,b,c;
+        for(int i=0;i<105;i++){
+            g[i].clear();
+
+        }
+        for(int i=0;i<n;i++){
+            cin >> a >> b >> c;
+            nodes[i]=make_pair(max(a,b+c),b+c);//need,lost ,,need>=lost
+        }
+        for(int i=0;i<n-1;i++){
+            cin >>a >> b;
+            a--;
+            b--;
+            g[a].emplace_back(b);
+            g[b].emplace_back(a);
+        }
+//
+        int anss = INF;
+        for(int i=0;i<n;i++){
+            pair<int,int>tmp = dfs(i,-1);
+            if(anss>tmp.first){
+               anss = tmp.first;
+            }
+        }
+//
+        kase++;
+        cout << "Case "<<kase<<": "<<anss<<endl;
+    }
+    return 0;
+}
