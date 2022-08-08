@@ -1,0 +1,278 @@
+#include<bits/stdc++.h>
+using namespace std;
+#define F first
+#define S second
+#define vec vector
+using pii = pair<int, int>;
+using ll = long long;
+#define eb emplace_back
+#define al(x) x.begin(), x.end()
+double fcmp(double a, double b, double eps = 1e-9) {
+    if (fabs(a-b) < eps) return 0;
+    return (a > b)*2-1;
+}
+const int INF = 0x3f3f3f3f;
+struct pt{
+
+    double x,y;
+
+    pt(){}
+    pt(double x,double y): x(x),y(y) {}
+    
+    pt operator+(pt src){
+        return pt(x+src.x,y+src.y);
+    }
+
+    pt operator-(pt src){
+        return pt(x-src.x,y-src.y);
+    }
+
+    double operator*(pt src){//dot product
+        return x*src.x + y*src.y;
+    }
+
+    pt operator*(double src){
+        return pt(x*src,y*src);
+    }        
+
+    double operator^(pt src){//cross
+        return x*src.y-y*src.x;
+    }
+
+    bool operator==(pt src)const{
+        return x==src.x && y==src.y;
+    }
+
+    bool operator!=(pt src) const {
+        return !(*this == src);
+    }
+    
+    double dis(pt src){
+        return sqrt((src.x-x)*(src.x-x) + (src.y-y)*(src.y-y));
+    }
+
+
+    bool operator<(pt src) {
+        if (x != src.x)
+            return x < src.x;
+        return y < src.y;
+    }
+};
+
+struct line{
+    pt sp,ep;
+
+    line(){}
+    line(pt sp,pt ep): sp(sp),ep(ep) {}
+    line(double x,double h,double b,bool r){
+        if(r){
+            sp = pt(x,h);
+            ep = pt(x + b/2 , 0);
+        }
+        else{
+            sp = pt(x - b/2 , 0);
+            ep = pt(x,h);
+        }
+    }
+
+    bool operator<(line src){
+        if(sp != src.sp) return sp<src.sp;
+        if((*this).slope() != src.slope()) return (*this).slope() > src.slope();
+        return dis() > src.dis();
+    }
+//ax+by+c = 0
+//a = y0 – y1, b = x1 – x0, c = x0y1 – x1y0。
+//F0(x) = a0*x + b0*y + c0 = 0, F1(x) = a1*x + b1*y + c1 = 0
+//x = (b0*c1 – b1*c0)/D
+//y = (a1*c0 – a0*c1)/D
+//D = a0*b1 – a1*b0    
+pair<bool,pt> intersect(line src){
+        if(fcmp( cp(src.sp) * cp(src.ep) , 0 ) <= 0  &&  fcmp( src.cp(sp) * src.cp(ep) , 0 ) <= 0 ){
+            if(fcmp ( (sp-src.sp) ^ (sp-src.ep) , 0 )==0 && fcmp ( (ep-src.sp) ^ (ep-src.ep) , 0 )==0){
+                return {false,pt()};
+            }
+
+            double t = ((src.ep -src.sp) ^ (sp - src.sp)) / ((ep - sp) ^ (src.ep - src.sp));
+
+
+            return {true, sp + (ep-sp)*t};
+        }
+        //OA OB順逆=>相交 
+
+        return {false,pt()};
+    }
+
+    double cp(pt src){
+        return (ep-sp) ^ (src-sp);//cross product
+    }
+
+    double dis(){
+        pt tmp = (ep-sp);
+        return sqrt(tmp.x*tmp.x + tmp.y*tmp.y);
+    }
+
+    double slope(){
+        pt tmp = (ep-sp);
+        return tmp.y/tmp.x;
+    }
+
+};
+
+bool inborder(double src,double min1,double max1){
+    return fcmp(src,min1)>=0 && fcmp(max1,src)>=0;
+//min<=src<=max
+}
+
+bool inborder(pt src,line lii){
+    if(src == lii.sp || src == lii.ep)return 0;//endpoint false
+    return fcmp( ( (lii.ep - src) ^ (lii.sp - src)) , 0) == 0 && ( (lii.ep-src) * (lii.sp-src) < 0 );
+}//cross = 0 : parallel && dot product <0 (same direction)
+
+/*
+
+bool intersect(line a,line b){
+    return (fcmp( a.cp(b.sp) * a.cp(b.ep) , 0 ) < 0  &&  fcmp(b.cp(a.sp) * b.cp(a.ep) , 0 ) < 0 );
+    //OA OB順逆=>相交 
+}
+
+*/
+
+
+//ax+by+c = 0
+//a = y0 – y1, b = x1 – x0, c = x0y1 – x1y0。
+//F0(x) = a0*x + b0*y + c0 = 0, F1(x) = a1*x + b1*y + c1 = 0
+
+//x = (b0*c1 – b1*c0)/D
+//y = (a1*c0 – a0*c1)/D
+//D = a0*b1 – a1*b0
+
+/*pt ptintersect(line a,line b){
+    double aa = (a.ed - a.sp)^(b.sd-a.sp);
+    double bb = (a.ed - a.sp)^(b.ed-a.sp);
+    return (b.ep * aa - b.sp * bb) / (aa-bb);
+}*/
+
+int main(){
+    int n,kase=0;
+    while(cin>>n){
+        if(!n) break;
+        double ans = 0;
+        vector< pair < line , vector < pair< pt , int > > > > lines;
+
+        for(int i=0;i<n;i++){
+            double x,h,b;
+            cin>> x >> h >> b;
+            /*line tmp1,tmp2;
+            pt ptmp1,ptmp2;
+
+            ptmp1.x = x-b/2;
+            ptmp1.y = 0;
+            ptmp2.x = x;
+            ptmp2.y = h;
+            tmp1.sp = ptmp1;
+            tmp2.ep = ptmp2;
+            
+            ptmp1 = ptmp2;
+            ptmp2.x = x+b/2;
+            ptmp2.y = 0;
+            tmp2.sp = ptmp1;
+            tmp2.ep = ptmp2;
+
+            lines.emplace_back(tmp1);
+            lines.emplace_back(tmp2);
+            */
+
+            lines.emplace_back( make_pair(line(x,h,b,false) , vector< pair< pt , int > > () ) );
+            lines.emplace_back( make_pair(line(x,h,b,true) , vector< pair< pt , int > > () ) );
+            //two lines,false=left
+            //lines + <intersecting lines,idx>
+        }
+/*
+        line tmp1,tmp2;
+        tmp1.st.x = -INF;
+        tmp1.st.y = 0;
+        tmp1.ed.x = INF;
+        tmp1.ed.y = 0;
+
+        vector<pt> pts;
+        for(int i=0;i<=2*n;i++){
+            for(int j=0;j<=2*n;j++){
+                if(i!=j){
+                    if(intersect(line[i],line[j])|| line[i].sp ==){
+                        pt ptmp;
+                        ptmp = 
+                    }
+                }
+            }
+        }
+*/
+        //from left to right
+        auto cmp = [](pair<line, vec<pair<pt, int>>> a, pair<line, vec<pair<pt, int>>> b) {
+            return a.F < b.F;
+        };
+        sort(al(lines), cmp);//smaller x,larger slope,larger length
+        
+        lines.emplace_back(make_pair(line(pt(-INF,0),pt(INF,0)),vector<pair<pt,int>>()));
+
+
+        //intersect lines
+        for(int i=0;i<lines.size();i++){
+            for(int j=i+1;j<lines.size();j++){
+                pt tmp;
+                bool good;
+                tie(good,tmp) = lines[i].first.intersect(lines[j].first);
+
+                if(good){
+                    lines[i].second.emplace_back(make_pair(tmp,j));
+                    lines[j].second.emplace_back(make_pair(tmp,i));
+                }
+            }
+        }
+
+
+        //sort adjancy lines down to up
+
+        auto cmpv = [&](pair<pt,int>a, pair<pt,int>b){
+            if( fcmp( a.first.x,b.first.x) != 0 ||  fcmp( a.first.y,b.first.y) != 0){
+                return a.first < b.first;
+            }
+
+            if( fcmp( lines[a.second].first.slope() - lines[b.second].first.slope(), 0 ) != 0 ){
+                return lines[a.second].first.slope() > lines[b.second].first.slope();
+            }
+
+            return lines[a.second].first.dis() > lines[b.second].first.dis();
+        };
+
+        for(int i=0;i<lines.size();i++){
+            sort(al(lines[i].second),cmpv);
+        }
+
+        int idx=0;
+        auto now = lines[0].second[0];
+
+//      vector< pair < line , vector < pair< pt , int > > > > lines;
+        //for every vertex, check every lines
+        while(now.first != lines.back().second.back().first){//pt go
+            auto nxt = upper_bound(al(lines[idx].second),now,cmpv);
+
+            while(lines[(*nxt).second].first.slope() < lines[idx].first.slope() && (*nxt).first != lines[idx].first.ep){
+                nxt ++;
+            }
+
+            if(!(fcmp(now.first.y , 0) == 0 && fcmp((*nxt).first.y , 0) == 0 )){
+                ans += now.first.dis((*nxt).first);
+            }
+
+            now = (*nxt);
+            swap(idx,now.second);
+        }
+
+
+        kase++;
+        cout << "Case " << kase << ": " << round(ans) << endl << endl;
+
+
+    }
+}
+
