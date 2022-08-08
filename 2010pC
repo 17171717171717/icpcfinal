@@ -1,0 +1,103 @@
+#include<bits/stdc++.h>
+using namespace std;
+#define F first
+#define S second
+#define vec vector
+#define eb emplace_back
+#define al(x) x.begin(), x.end()
+#define pb push_back
+#define ll long long
+#define mp make_pair
+//int will overflow
+const int MAXS = 25;//s<=20
+const int MAXR = 105;//nr<=100
+const int MAXN = 512;
+const ll INF = 1LL << 61;
+
+map<string, int> Rmap[MAXS];//if exist same status
+vector<string> Rvec[MAXS];//adjancy
+
+void addnode(string s){
+    int len = s.length(),label;
+    if(!Rmap[len].count(s)){//haven't existed
+        label = Rmap[len].size();
+        Rmap[len][s]= label;//node1234567
+        Rvec[len].push_back(s);//adjancy lists
+    }
+}
+ll dist[MAXN][MAXN] ,predist[MAXN][MAXN];
+
+int main(){
+    string st;
+    int kase=0;
+    while(cin >> st){
+        if(st == ".") break;
+        string ed;
+        int nr;
+        cin >> ed >> nr;
+        set<pair<string,string>>rules;
+        for(int i=0;i<MAXS;i++){
+            Rmap[i].clear();
+            Rvec[i].clear();
+        }
+        string nr1,nr2;
+        for(int i=0;i<nr;i++){
+            cin >> nr1 >> nr2;
+            rules.insert(mp(nr1,nr2));
+            for(int j=0;j<nr1.size();j++){
+                string s1 = nr1.substr(j);
+                string s2 = nr2.substr(j);
+                addnode(s1);
+                addnode(s2);
+            }
+        }
+        int n = st.length();
+        for(int i=0;i<n;i++){
+            string s1 = st.substr(i);
+            string s2 = ed.substr(i);
+            addnode(s1);
+            addnode(s2);
+        }
+
+
+        for(int p=1;p<=n;p++){//last len
+            int k = Rmap[p].size();
+            for(int i=0;i<k;i++){
+                for(int j=0;j<k;j++){
+                    if(i==j) dist[i][j] = 0;
+                    else{
+                        dist[i][j] = INF;
+                        if(rules.count(mp(Rvec[p][i],Rvec[p][j]))){
+                            dist[i][j] = min(dist[i][j],1LL);//have rule, 1move
+                        }
+
+                        if(p>1 && Rvec[p][i][0] == Rvec[p][j][0]){//first is the samd
+							int pi = Rmap[p-1][Rvec[p][i].substr(1)];//長度-1的LABEL
+							int pj = Rmap[p-1][Rvec[p][j].substr(1)];
+
+							dist[i][j] = min(dist[i][j] ,predist[pi][pj]);
+                        }
+                    }
+                }
+            }
+        
+//sp every time whem build a new graph
+			for(int aa=0 ; aa<k ; aa++)
+				for(int bb=0 ;bb<k ; bb++)
+					for(int cc=0 ; cc<k ; cc++)
+						dist[bb][cc] = min(dist[bb][cc] ,dist[bb][aa] + dist[aa][cc]);
+
+				for(int i=0 ; i<k ; i++)
+					for(int j=0 ; j<k ; j++)
+						predist[i][j] = dist[i][j];
+        }
+        ////
+		int ansst = Rmap[n][st] , ansed = Rmap[n][ed];
+        kase++;
+		cout << "Case " << kase << ": ";
+		if(dist[ansst][ansed] >= INF)
+			cout << "No solution" << endl;
+		else
+			cout << dist[ansst][ansed] << endl;
+    }
+}
