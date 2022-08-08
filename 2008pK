@@ -1,0 +1,169 @@
+#include <utility>
+#include <bits/stdc++.h>
+using namespace std;
+#define F first
+#define S second
+#define vec vector
+using pii = pair<int, int>;
+using ll = long long;
+double fcmp(double a, double b, double eps = 1e-9) {
+    if (fabs(a-b) < eps) return 0;
+    return (a > b)*2-1;
+}
+const ll INF = 2000000000000;
+int R,C;
+inline int toid(int xxx,int yyy){//convert to vertex on g
+    return xxx*C+yyy;//4*4 -> 1,3:7 / 3,3:15 / 3,1:13 / 1,1:5 / 1,2:6 /2,1:9
+}//0,1 : 1 / 0,2: 2....
+
+pii direc[4] = {
+    {-1,0},
+    {1,0},
+    {0,-1},
+    {0,1}
+};//goto DIRECTION
+
+using status = tuple<ll,int,int,int>;//dis,r,c,direction
+
+
+bool inborder(pii ppp){
+    if (ppp.F>=R || ppp.F<0 || ppp.S>=C || ppp.S<0) return false;
+    return true;
+}
+
+int main(){
+    int kase = 0;
+    pii st,ed;
+    while(cin >> R >> C >> st.F >> st.S >> ed.F >> ed.S){
+		st.F--, st.S--, ed.F--, ed.S--;
+        if (R == 0 && C == 0) 
+            break;
+        vec<vec<ll>> graph(R*C ,vec<ll>(R*C,INF));//(R*C) * (R*C)
+        //every vertex on grid to every vertex on grid 
+
+        //4*4 -> 4*(4-1) + (4-1)*4 roads
+        //R*C -> R*(C-1) + (R-1)*C roads
+        for(int i=0;i<R;i++){
+            for(int j=0;j<C-1;j++){//1~2~3~4 3*~
+            //row roads
+                int fm=toid(i,j);//i * C + j
+                //j,C+j,2C+j......R-1+j
+                int go=toid(i,j+1);//i * C + j + 1
+                //C,2C+j,3C+j......(R-2)*C+j
+                ll w;
+                cin >> w;
+                if(w!=0) 
+                    graph[fm][go] = graph[go][fm] = w;
+            }
+
+            if(i == R-1) break;//3*2+1=7roads
+
+            for(int j=0;j<C;j++){//column roads
+                int fm=toid(i,j);//i*C+j   
+                //j,C+j,2C+j......
+                int go=toid(i+1,j);//iC+C + j(0 ~ C-1) 
+                //column roads
+                ll w;
+                cin >> w;
+                if(w!=0) graph[fm][go] = graph[go][fm] = w;
+            }
+        }
+        /*for(int i=0;i<R*C;i++){
+            for(int j=0;i<R*C;j++){
+                cout<<graph[i][j];
+            }
+            cout << endl;
+        }*/
+        
+        vec<vec<vec<ll>>> dis(R,vec<vec<ll>>(C,vec<ll>(8,INF)));//R*C*8,8possible roads
+		priority_queue<status, vector<status>, greater<status>> pq;
+        for(int i=0;i<8;i++){
+            pq.emplace(0,st.F,st.S,i);
+        }//000 001 010 011 100 101 110 111
+        //2 for come from 4 directions, 1 for next step turn or not 
+
+        bool dijk = true;//T:double ,F:no need to double weight
+        while(!pq.empty()){
+            int ri,ci,di;
+            ll disi;
+            tie(disi,ri,ci,di)= pq.top();
+            pq.pop();
+            if(dijk && (ri != st.F || ci != st.S) ){
+                dijk = false;
+            }//it's not first one && turn
+
+
+
+            if(dijk == false && disi != dis[ri][ci][di]) continue;
+
+            if((di & 1) == 0){//01 -> 0,2,4,6 will go straight
+                int i = (di >> 1);//direction / 2 ->0,1,2,3
+                pii dest(ri+direc[i].F,ci+direc[i].S);
+                if(!inborder(dest))
+                    continue;
+                int fm=toid(ri,ci);
+                int go=toid(dest.F,dest.S);
+                ll w = graph[fm][go];
+                for(int j=0;j<2;j++){//turn or not turn
+                    int id = di+j;//direction 0246 to 0246 or 1357
+                    int turn = 2;
+                    if(j==0) 
+                        turn = 1;//1357:turn
+                    if(dijk) 
+                        turn = 2;//0246: dijk ture->turn
+                    if(dis[dest.F][dest.S][id]> disi + turn *w){
+                        dis[dest.F][dest.S][id] = disi + turn *w;//update
+                        pq.emplace(disi+turn*w,dest.F,dest.S,id);//new djik
+                   //     cout << disi+turn*w<<" "<<dest.F<<" "<< dest.S<<" "<<id<<endl;
+
+                    } 
+                }     
+            }
+            else{//1,3,5,7,, won't go straight
+                for(int i=0;i<4;i++){//0123
+                    if((di>>1)==i) continue;//di=1==i=0,3:1,5:2,7:3 =>go straight
+                    pii dest(ri+direc[i].F,ci+direc[i].S);
+                    if(!inborder(dest))continue;
+                    int fm = toid(ri,ci);
+                    int go = toid(dest.F,dest.S);
+                    ll w = graph[fm][go];
+                    for(int j=0;j<2;j++){//turn or not turn
+                        int id = (i<<1) + j;//0123->0246+ (0,1)=>0246 1357
+                        int turn = 2;
+
+                        if(dis[dest.F][dest.S][id]>disi + turn *w){
+                            dis[dest.F][dest.S][id]=disi + turn *w;
+                            pq.emplace((disi+turn*w),dest.F,dest.S,id);
+                        //    cout << disi+turn*w<<" "<<dest.F<<" "<< dest.S<<" "<<id<<endl;
+                        } 
+                    }
+                }
+            }
+        }
+
+        ll ans = INF;
+        int eid = toid(ed.F,ed.S);
+        for(int i=0;i<4;i++){
+            pii from(ed.F+direc[i].F,ed.S+direc[i].S);
+            if(!inborder(from))continue;
+            int ci = (((i&2) == 0)? (i==1 ? 0:1) : (i==2 ? 3:2));//0123-> 0,1->0,1 ,, 2,3 -> 3,2
+            for(int j=0;j<8;j++){//01234567, ci==0123 && j==1,3 || ci=4567 && j==0,2
+                if((ci == (j >> 1)) && ((j & 1) == 1) || ((ci != (j >> 1)) && ((j&1)== 0)))continue;
+                //4 points in a node go to eight direction
+                int fid = toid(from.F,from.S);
+                ans = min(ans, dis[from.F][from.S][j] + graph[fid][eid]*2);
+                if(from == st) 
+                    ans = min(ans,graph[fid][eid]*2);//start to dest
+            }
+        }
+
+        kase++;
+		cout << "Case " << kase << ": ";
+		if(ans == INF)
+			cout << "Impossible"<<endl;
+		else
+		 	cout << ans << endl;
+        
+    }
+    return 0;
+}
