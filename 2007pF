@@ -1,0 +1,181 @@
+#include<bits/stdc++.h>
+using namespace std;
+
+int N,M,W;
+int anslen = 0;
+int dx[4] = {0,0,1,-1};
+int dy[4] = {1,-1,0,0};
+unordered_set<string> str;
+int kase =0 ;
+
+struct board{
+        int n,m;
+        int len=0;
+        int w,r,c;
+        int x1,x2,y1,y2;
+        int g[5][5];
+        bool wall[5][5][4];//4 direction
+
+        void init(){
+                for(int i=0;i<5;i++){
+                        for(int j=0;j<5;j++){
+                                g[i][j]=0;
+                                for(int k=0;k<4;k++){
+                                        wall[i][j][k]=0;
+                                }
+                        }
+                }
+        }
+
+        void cinn(){
+                for(int i=1;i<=M;i++){
+                        cin >> r >> c;
+                        r++;
+                        c++;
+                        g[r][c] = i;//marble index 1~m
+                }
+                for(int i=1;i<=M;i++){
+                        cin >> r >> c;
+                        r++;
+                        c++;
+                        g[r][c] = i+10;//hole index 1~m
+                }
+                for(int i=0;i<W;i++){
+                        cin >> x1 >> y1 >> x2 >> y2;
+                        for(int j=0;j<4;j++){
+                                if((x1+dx[j]) == x2 && (y1+dy[j]) == y2 ){
+                                        wall[x1+1][y1+1][j] = true;
+                                }
+                                if((x2+dx[j]) == x1 && (y2+dy[j]) ==y1 ){
+                                        wall[x2+1][y2+1][j] = true;
+                                }
+                        }
+                }
+        }
+
+        bool ismarble(int x){
+                if(x>10 || x==0) return false;
+                return true;
+        }
+        bool ishole(int x){
+                return x>10;
+        }
+        bool inborder(int i,int j){
+                if(1<=i && i<=N && 1<=j && j<=N) return true;
+                else return false;
+        }
+        bool isfinish(){
+                for(int i=1;i<=N;i++){
+                        for(int j=1;j<=N;j++){
+                                if(g[i][j]!=0) return false;
+                        }
+                }
+                return true;
+        }
+
+        bool lift(int idx){
+                        for(int cnt=0;cnt<N;cnt++){
+                                for(int i=1;i<=N;i++){
+                                        for(int j=1;j<=N;j++){
+                                                if(!ismarble(g[i][j])) continue;
+                                                if(wall[i][j][idx]) continue;
+
+                                                int x=i+dx[idx];
+                                                int y=j+dy[idx];
+
+                                                if(!inborder(x,y))continue;
+                                                if(ismarble(g[x][y]))continue;
+
+                                                else if(ishole(g[x][y])){
+                                                        if(g[x][y] == (g[i][j]+10)){
+                                                                g[i][j] = g[x][y] = 0;
+                                                                continue;
+                                                        }
+                                                        else return false;
+                                                }
+                                                else{//move to next unit
+                                                        g[x][y] = g[i][j];
+                                                        g[i][j] = 0;
+                                                }
+
+
+                                        }
+                                }
+
+                        }
+                        len++;
+                    
+                        return true;
+
+        }
+
+        string hashing(){
+            string tmp ="";
+            for(int i=1 ; i<=N ; i++)
+            {
+                for(int j=1 ; j<=N ; j++)
+                    tmp += to_string(g[i][j]);
+            }
+    
+            return tmp;
+        }
+
+
+};
+
+queue<board> q;
+
+bool recur(int i,board now){
+
+    if(!now.lift(i)) return false;
+
+    if(now.isfinish()){
+		cout << "Case " << kase << ": " << now.len << " moves" << endl << endl;
+		return true;
+    }
+
+    string nowstr = now.hashing();
+
+    if(str.find(nowstr) == str.end()){//沒有才加
+        str.insert(nowstr);
+        q.emplace(now);
+    }
+    return false;
+
+}
+
+void bfs(){
+        bool finish=false;
+        while(!q.empty() && (!finish)){
+                for(int i=0;i<4;i++){
+                        finish = recur(i,q.front());
+                        if(finish)break;
+
+                }
+                q.pop();
+
+        }
+        if(!finish){
+             cout << "Case " << kase << ": impossible" << endl << endl;
+        }
+}
+
+int main(){
+        while(cin>> N >> M >> W){
+                if(N==0&&M==0&&W==0) break;
+                board st;
+                st.init();
+                str.clear();
+                str.rehash(999999);
+                while(!q.empty()) q.pop();
+                anslen = 0;
+
+                st.cinn();
+                q.emplace(st);
+                kase++;
+                bfs();
+
+
+
+        }
+}
