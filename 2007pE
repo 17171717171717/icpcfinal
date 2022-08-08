@@ -1,0 +1,395 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+using ll = long long;
+template<typename T> using p = pair<T, T>;
+template<typename T> using vec = vector<T>;
+template<typename T> using deq = deque<T>;
+
+// #define dbg
+
+#define yccc ios_base::sync_with_stdio(false), cin.tie(0)
+#define al(a) a.begin(),a.end()
+#define F first
+#define S second
+#define eb emplace_back
+
+#ifndef dbg
+#define endl '\n'
+#define debug(x) ;
+#define devec(v) ;
+#define devec2(v) ;
+#else
+#define debug(x) cout << " > " << #x << ": " << x << endl;
+#define devec(v) cout << " > " << #v << ": "; for (auto i : v) cout << i << ' '; cout << endl;
+#define devec2(v) cout << " > " << #v << ":\n"; for (auto i : v) { for (auto k : i) cout << setw(10) << setfill(' ') << k; cout << endl; }
+#endif
+
+const int INF = 1e9;
+const ll llINF = 1e18;
+const int MOD = 1e9+7;
+const double eps = 1e-6;
+const double PI = acos(-1);
+
+double fcmp(double a, double b, double eps = 1e-6) {
+    if (fabs(a-b) < eps) return 0;
+    return a - b;
+}
+
+struct pt{
+
+    double x,y;
+
+    pt(){}
+    pt(double x,double y): x(x),y(y) {}
+    
+    pt operator+(pt src){
+        return pt(x+src.x,y+src.y);
+    }
+
+    pt operator-(pt src){
+        return pt(x-src.x,y-src.y);
+    }
+
+    double operator*(pt src){//dot product
+        return x*src.x + y*src.y;
+    }
+
+    pt operator*(double src){
+        return pt(x*src,y*src);
+    }        
+
+    double operator^(pt src){//cross
+        return x*src.y-y*src.x;
+    }
+
+    bool operator==(pt src){
+        return(x==src.x && y==src.y);
+    }
+
+};
+
+struct line{
+    pt sp,ep;
+
+    line(){}
+    line(pt sp,pt ep): sp(sp),ep(ep) {}
+
+    double cp(pt src){
+        return (ep-sp) ^ (src-sp);//cross product
+    }
+
+};
+
+int N;
+vector<pt> pts;
+vector<double>dist,pre;
+
+int prev(int i){
+    return (i-1+N)%N;
+}
+
+int next(int i){
+    return (i+1)%N;
+}
+
+double atan2(pt st,pt ed){
+    return atan2(ed.y-st.y, ed.x-st.x);// y/x theta
+}
+
+bool inborder(double src,double min1,double max1){
+    return fcmp(src,min1)>=0 && fcmp(max1,src)>=0;
+//min<=src<=max
+}
+
+bool inborder(pt src,line lii){
+    if(src == lii.sp || src == lii.ep)return 0;//endpoint false
+    return fcmp( ( (lii.ep - src) ^ (lii.sp - src)) , 0) == 0 && ( (lii.ep-src) * (lii.sp-src) < 0 );
+}//cross = 0 : parallel && dot product <0 (same direction)
+
+bool check(int i,int j){//check if two pts could build a path
+//  return 1;
+
+    if(pts[next(i)] == pts[j] || pts[prev(i)] == pts[j]) return true;
+    //adjancy return true
+
+    double st = atan2( pts[i] , pts[prev(i)] );
+    double ed = atan2( pts[i] , pts[next(i)] );
+    double src = atan2( pts[i] , pts[j] );
+    // cout <<"i: "<<i <<" j: "<<j<<endl;
+     //cout <<st*180 /PI << ' ' << src*180 /PI << ' ' << ed*180 /PI << endl;
+    //st =90 or 0,,ed = 0 or -90,,src = i to j counterclockwise angle
+    
+    /*if(i==2 && k== 4){
+       cout << st*180/PI << ' ' << src*180/PI << ' ' << ed*180/PI << endl;
+    }*/
+
+    src = src - st;//i to j angle diff with i to pre i angle
+    while(fcmp(src,0)<0) src+=2*PI;
+    while(fcmp(2*PI,src)<0) src-=2*PI;// let 0<=theta<=360
+
+    ed = ed - st;
+    while(fcmp(ed,0)<0) ed+=2*PI;
+    while(fcmp(2*PI,ed)<0) ed-=2*PI;// let 0<=theta<=360
+
+    return fcmp(src, 0) >= 0 and fcmp(src, ed) <= 0;
+    //src~st > ed~st
+
+
+   /* if(i==2 && j== 4){
+       cout << i << " " << j << ' ' << src*180/PI << ' ' << ed*180/PI << endl;
+    }*/
+
+   // eg:CE, st=BC=180 ed=CD=09 src=CE=45 ,,, src=-135, ed=-90  |src|>|ed|
+    //src = 225,ed=270, 225<=270 built.
+}
+
+bool intersect(line a,line b){
+    return (fcmp( a.cp(b.sp) * a.cp(b.ep) , 0 ) < 0  &&  fcmp(b.cp(a.sp) * b.cp(a.ep) , 0 ) < 0 );
+    //OA OB順逆=>相交 
+}
+
+double dis(pt a,pt b){
+    return sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y));
+}
+
+
+int main(){
+    int kase = 0;  
+    while(cin >> N){
+        if(N==0)break;
+
+        pts.resize(N);
+        dist.resize(N);
+        pre.resize(N); 
+
+        for(int i=0;i<N;i++){
+            cin >> pts[i].x >> pts[i].y;
+        }
+
+        for(int i=0;i<N;i++){
+            dist[i] = dis(pts[i],pts[next(i)]);
+            if(i==0) pre[i] = dist[i];
+            else pre[i] = pre[i-1] + dist[i];
+        }
+
+        pt psger;
+        cin >> psger.x >> psger.y;
+
+        int ls,ps;
+        cin >> ls >> ps;
+
+        vector<vector<double>>g(N+1,vector<double>(N+1,INF));
+
+
+        bool good = true;
+/*        for(int i=0;i<N;i++){
+
+            for(int j=i+1;i<N;j++){
+
+                if(check( i , j )){
+
+                    good = true;
+
+                    for(int k=0;k<N;k++){//build with others
+                        //failed build
+                        if(inborder( pts[k] , line( pts[i] , pts[j] ))){//point in line
+                            good = false;
+                            break;
+                        }
+
+                        if(intersect ( line( pts[k] , pts[next(k)] ) , line( pts[i] , pts[j] ) ) ){//intersect
+                            good = false;
+                            break;
+                        }
+                    }
+
+                    if(good){
+                        g[i][j]=g[j][i]=dis(pts[i],pts[j]);//built
+                    }
+                }
+            }
+
+
+            good = true;
+            //build psger
+            for(int k=0;k<N;k++){
+                if(inborder( pts[k] , line( pts[i] , psger ))){
+                    good = false;
+                    break;
+                }
+
+                if( intersect( line( pts[k] , pts[next(k)] ) , line( pts[i] , psger ) ) ){
+                    good = false;
+                    break;
+                }
+            }
+
+            if(good){
+                g[i][N]=g[N][i] = dis(pts[i],psger);
+            }
+    
+        }
+*/        
+        for (int i = 0; i < N; i++) {
+            for (int k = i+1; k < N; k++) {
+                if (check(i, k)) {
+                    bool good = true;
+                    for (int z = 0; z < N; z++) {
+                        //* can not on line i, k.
+                        if (inborder(pts[z], line(pts[i], pts[k]))) {
+                            good = false;
+                            // cout << i << ' ' << k << ' ' << z << " fail 2\n";
+                            break;
+                        }
+                        
+                        
+                        //* can not intersect z, z+1, i, k.
+                        if (intersect(line(pts[z], pts[next(z)]), line(pts[i], pts[k]))) {
+                            good = false;
+                            // cout << i << ' ' << k << ' ' << z << " fail 3\n";
+                            break;
+                        }
+                    }
+                    
+                    if (good) {
+                        // cout << _list[i] << ' ' << _list[k] << endl;
+                        // cout << i << ' ' << k << ' ' << dis(_list[i], _list[k]) << endl;
+                        //TODO.
+                        g[i][k] = g[k][i] = dis(pts[i], pts[k]);
+                        //* build line.
+                    }
+                } 
+                // else cout << i << ' ' << k << " fail 1\n";
+            }
+            
+            bool good = true;
+            
+            for (int z = 0; z < N; z++) {
+                if (inborder(pts[z], line(pts[i], psger))) {
+                    good = false;
+                    break;
+                }
+                
+                if (intersect(line(pts[z], pts[next(z)]), line(pts[i], psger))) {
+                    good = false;
+                    // cout << i << ' ' << k << ' ' << z << " fail 3\n";
+                    break;
+                }
+            }
+            
+            if (good) {
+                // cout << i << ' ' << k << endl;
+                //TODO.
+                g[i][N] = g[N][i] = dis(pts[i], psger);
+                //* build line.
+            }
+        }
+
+//
+        for(int i=0;i<=N;i++){
+            for(int j=0;j<=N;j++){
+                for(int k=0;k<=N;k++){
+                    g[j][k] = min(g[j][k],g[j][i]+g[i][k]);
+                }
+            }
+        }
+
+
+        double l=0,r=1e8;
+
+        while(fcmp(r,l)>0){
+            double m = (l+r)/2;//now time spent
+            double lugdis = m * ls;//now distance 
+
+            lugdis -= ll(lugdis / pre[N-1]) * pre[N-1];//總共在圓上走了多遠
+
+            int idx = upper_bound( al(pre) , lugdis ) - pre.begin();//走到的點~下個點的下個點
+
+            double luggo = INF;
+            pt lug;
+
+            double t = atan2( pts[idx] , pts[next(idx)] );
+            lug = pts[next(idx)] - pt( cos(t) , sin(t) ) * ( pre[idx] - lugdis );//現在在哪裡
+
+            for(int i=0;i<N;i++){//lug跟其他所有點建邊for luggage 可以走過來
+                good = true;
+
+                for(int j=0;j<N;j++){
+
+                    if(inborder( pts[j] , line( pts[i] , lug ))){
+                        good = false;
+                        break;
+                    }
+
+                    if(intersect( line(pts[j] , pts[next(j)] ) ,line( pts[i] , lug ) ) ){
+                        if(!(inborder( pts[i] , line( pts[j] , pts[next(j)] )) || inborder( lug , line( pts[j] , pts[next(j)] )))){
+                            good = false;
+                            break;
+                        }
+                    }
+
+                    if(line( pts[idx] , pts[next(idx)] ).cp(pts[i]) > 0 ){
+                        good = false;
+                        break;
+                    }
+                }
+
+                if(good){//have a shortcut
+
+                    if(luggo > g[N][i] + dis(pts[i],lug)){
+                        luggo =g[N][i] + dis(pts[i],lug);
+                    }
+                }
+            }
+
+            good = true;
+
+            for(int i=0;i<N;i++){//pts,straight line can go 
+
+                if(inborder(pts[i],line(psger,lug))){
+                    good = false;
+                    break;
+                }
+
+                if (intersect(line(pts[i], pts[next(i)]), line(psger, lug))) {
+                    // cout << ' ' << z << " fail 2\n";
+                    good = false;
+                    break;
+                }
+                
+                if (fcmp( line(pts[idx] , pts[next(idx)]).cp(psger) , 0) > 0) {
+                    // cout << ' ' << z << " fail 3\n";
+                    good = false;
+                    break;
+                }
+            }
+
+            if(good){//straight line
+                luggo = min(luggo,dis(psger,lug));
+            }
+
+            luggo /= ps;
+
+            if(luggo>m) l=m;
+            else r=m; 
+        }
+
+
+        kase++;
+        
+        /*int hr = int (r);
+        int minu = round( ( r-int(r) ) * 60);
+        if(minu == 60){
+            minu = 0;
+            hr++;
+        }*/
+        
+        int m = int(r), s = round((r - int(r)) * 60);
+        if (s == 60) s = 0, m++;
+        
+        cout << "Case " << kase << ": Time = " << m << ":" << setw(2) << setfill('0') << s << endl;
+        //cout << "Case " << kase << ": Time = " << hr << ":" << setw(2) << setfill('0') << minu << endl;
+
+    }
+}
