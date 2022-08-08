@@ -1,0 +1,28 @@
+#include <bits/stdc++.h>
+using namespace std;
+#define eb emplace_back
+int main(){
+	string str;
+	vector<char> ships;
+	int kase=0;
+	while ( cin >> str){
+		if(str == "end") break;
+		ships.clear();
+		ships.eb(str[0]);
+		for(int i=1;i<str.length();i++){
+			auto it = lower_bound(ships.begin(),ships.end(),str[i]);
+			
+			if(it == ships.end()){
+				ships.eb(str[i]);
+			}
+			else{
+				*it = str[i];//it ship top is str[i]
+			}
+		}
+		kase++;
+		cout << "Case " << kase << ": " << ships.size() << endl;
+	}
+	
+	
+	return 0;
+}
