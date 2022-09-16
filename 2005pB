@@ -1,0 +1,129 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int INF = 1e9;
+double precision(double a, double b, double eps ) {
+    if (fabs(a-b) < eps) return 0;
+    return a - b;
+}
+vector<pair<double,double>> bts,cities;//x,y
+vector<int> ctid;
+pair<double,double>xy;
+double distance(pair<double,double>a,pair<double,double>b){
+    return sqrt(((a.first - b.first)*(a.first - b.first)) + ((a.second -b.second)*(a.second -b.second)));
+}
+
+int findctid(pair<double,double> a){
+    double id=-1,asdf=INF;
+    for(int i=0;i<bts.size();i++){
+        if(distance(bts[i],a)<asdf){
+            asdf = distance(bts[i],a);
+            id = i;
+        }
+    }
+    return id;
+}
+int findctid(pair<double,double>a,pair<double,double>b,double m){
+    double theta = atan2(b.second-a.second,b.first-a.first);
+    xy.first = m*cos(theta)+a.first;//mid x,,r * cos theta
+    xy.second = m*sin(theta)+a.second;//mid y
+    double id,asdf=INF;
+    for(int i=0;i<bts.size();i++){
+        if(distance(bts[i],xy)<asdf){
+            asdf = distance(bts[i],xy);
+            id = i;
+        }
+    }
+    return id;
+
+}
+int main(){
+    int B,C,R,Q,kase=0;
+    cin >> B >> C >> R >> Q;
+    while(1){
+        if(B == 0 ) break;
+        kase++;
+        cout << "Case "<<kase<<":"<<endl;
+        bts.clear();
+        ctid.clear();
+        cities.clear();
+        bts.resize(B);
+        for(int i=0;i<B;i++){
+            double a,b;
+            cin >> a >> b;
+            bts[i]=(make_pair(a,b));
+        }
+        cities.resize(C);
+        for(int i=0;i<C;i++){
+            double a,b;
+            cin >> a >> b;
+            cities[i]=(make_pair(a,b));
+        }
+        ctid.resize(C);
+        for(int i=0;i<C;i++){
+            ctid[i]=findctid(cities[i]);// find all the cities belong to which tower
+        }
+
+        vector<vector<int>> roads(C,vector<int>(C,INF));//approxi cities * cities roads,,length =INF
+
+        for(int i=0;i<R;i++){//roads weight
+            int a,b;
+            cin >> a >> b;
+            a--,b--; // 0 base
+            int switchs=0;
+            int id = ctid[a];
+            while(id!=ctid[b]){//一格一格往前
+                switchs++;
+                double l = 0, r=distance(cities[a],cities[b]);
+
+                while(precision(l,r,1e-6)){//精度10^-6下找離最近的下一個bts
+                    double mid = (l+r) /2;
+                    int j = findctid(cities[a],cities[b],mid);//找離兩個cities中心點最近的tower
+                    if(j == id){                            //且get中點x,y
+                        l = mid;//是s 往e那邊靠 for找到next id on the road
+                    }
+                    else{
+                    	r = mid;
+                    }//不是s 往s那邊
+                }
+
+                for(int k=0;i<bts.size();k++){
+                    if(k == id ) continue;
+                    if(precision(distance(xy, bts[id]), distance(xy, bts[k]), 1e-6) == 0) {
+                            id = k;//it's the middle point
+                            break;
+                    }
+                }
+
+            }
+            roads[a][b] = switchs;
+            roads[b][a] = switchs;//undirected
+        }
+
+        //all pairs
+        for(int i=0;i<C;i++){
+            for(int k=0;k<C;k++){
+                for(int j=0;j<C;j++){
+                	if(roads[i][k]+roads[k][j]<roads[i][j]){
+                            roads[i][j] = roads[i][k]+roads[k][j];
+                			}
+                        }
+                    }
+                }
+
+
+        for(int i=0;i<Q;i++){
+        	int a,b;
+            cin >> a >> b;
+            a--;
+            b--;
+
+            if(roads[a][b] != INF){
+                cout << roads[a][b]<< endl;
+            }
+            else cout<< "Impossible" << endl;
+        }
+
+         cin >> B >> C >> R >> Q;
+    }
+    return 0;
+}
