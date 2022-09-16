@@ -1,0 +1,122 @@
+#include<bits/stdc++.h>
+using namespace std;
+#define F first
+#define S second
+#define vec vector
+#define al(x) x.begin(), x.end()
+const int INF = 0x3f3f3f3f;
+double fcmp(double a, double b, double eps = 1e-9) {
+    if (fabs(a-b) < eps) return 0;
+    return (a > b)*2-1;
+}
+const double ps = 0.097;
+double firsth;
+double pressure(double h){
+	return 1 + ps * (firsth - h);
+}
+
+double soleq(double a,double b,double c){
+	return (-b - sqrt(b * b - 4 * a * c)) / (2 * a);
+}
+//(S1-H1)*P0 = (S1-h2)*P1'
+//(S1-H2)*P1'=(S1-h2*2)*P2
+//(S2-h2)*P2 =(S2-h3)*P2'...
+int main(){
+    int n,kase=0;
+    while(cin >> n){
+        if(n==0) break;
+        double hh;
+        vec<double>tanks(n),pipe(n),accumtanks(n);
+        for(int i=0;i<n;i++){
+            cin >> hh;
+            tanks[i] = hh;
+        }
+        for(int i=1;i<n;i++){
+            cin >> hh;
+            pipe[i] = hh;
+        }
+        firsth = tanks[0];
+        accumtanks[n-1] = tanks[n-1];
+        for(int i=n-2;i>=0;i--){
+            accumtanks[i] = accumtanks[i+1] + tanks[i];
+        }
+        int stop=0,region=0;
+        //region =1:tanks[i]'s P at pipe[i+1]
+        //region =2:tanks[i]'s P at pipe[i]
+        vec<pair<double,double>>tanksp(n);//Pi,Pi'
+        tanksp[1].first = tanksp[0].first = tanksp[0].second=1.0;
+        for(int i=1;i<n;i++){
+        	
+            if(i==1) tanksp[i].first = 1.0;
+            else tanksp[i].first = (accumtanks[i-1]-pipe[i])*tanksp[i-1].second / (accumtanks[i-1]-pipe[i]*2.0);
+			
+			if (fcmp(pressure(pipe[i]), tanksp[i].first) < 0){
+				stop = i;
+				region = 2;
+				break;
+			}
+           
+            if((i+1)<n){//2~n-1,p1v1=p2v2
+                tanksp[i].second  = (accumtanks[i]-pipe[i])*tanksp[i].first/(accumtanks[i]-pipe[i+1]);
+				if (fcmp(pressure(pipe[i+1]), tanksp[i].second) < 0)
+				{
+					stop = i;
+					region = 1;
+					break;
+				}
+            }
+            else{//the last
+                stop = n-1;
+                region = 1;
+            }
+        }
+        
+        vec<double>ansh(n);
+        ansh[0] = tanks[0];
+        int realstop = stop-1;
+        if(region == 1)realstop++;
+		/*
+		若region=1，表示水位已經過了Pi(介於Pi.F ~ Pi.S中間 or 為最後一根管子則是所有Pi以上的空間)，所以氣壓已經與前一個管子隔開，則需要將limit++，計算到 管子_stopId-1 的水高
+		若region=2: 表示水位尚未經過Pi(介於bottom~Pi中間)，且stopId-1與stopId的空氣上流通所以水位先計算到stopId-2就好，最後再分開計算stopId-1與stopId的水位
+			_________	_________
+			|	|	|	|
+			|-------|	|-------|Pi.second
+			|	|  pipe	|   1	|
+		     ...|	|=======|-------|Pi.first
+			|	|	|   2	|
+			|_______|	|_______|
+			管子_stopId-1	管子_stopId
+		*/
+		for (int i = 1; i < realstop; i++){
+			double Sp = tanks[i] - pipe[i+1];
+			double O = tanks[i];
+			double Pp = tanksp[i+1].first;
+			double a = ps;
+			double b = ps * (-O - tanks[0]) - 1.0;
+			double c = (O + ps * O * tanks[0] - Pp * Sp);
+			ansh[i] = soleq(a, b, c);
+		}
+		
+		if(region == 1){
+			double Sp = tanks[stop] - pipe[stop];
+			double O = tanks[stop];
+			double Pp = tanksp[stop].first;
+			double a = ps;
+			double b = ps * (-O - tanks[0]) - 1.0;
+			double c = (O + ps * O * tanks[0] - Pp * Sp);
+			ansh[stop] = soleq(a, b, c);//ax^2+bx+c=0
+		}
+        else if(region == 2){
+            int i = stop-1;
+            double Sp = tanks[i] - pipe[stop];
+            double O = tanks[i] - pipe[stop];
+            double Pp = tanksp[i].second;
+            ansh[i] = pipe[stop];
+            ansh[stop] = O - Sp * Pp / (1 + ps * (tanks[0] - pipe[stop]));
+        }
+         double anss = accumulate(al(ansh), 0.0);
+         kase++;
+         cout << fixed << setprecision(3);
+         cout << "Case " << kase << ": " << anss << endl << endl;
+    }
+}
