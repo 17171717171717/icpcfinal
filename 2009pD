@@ -1,0 +1,139 @@
+#include<bits/stdc++.h>
+using namespace std;
+#define F first
+#define S second
+#define vec vector
+using pii = pair<int, int>;
+using ll = long long;
+#define eb emplace_back
+#define al(x) x.begin(), x.end()
+double fcmp(double a, double b, double eps = 1e-9) {
+    if (fabs(a-b) < eps) return 0;
+    return (a > b)*2-1;
+}
+const int INF = 0x3f3f3f3f;
+const double pi = acos(-1);
+struct pt{
+
+    double x,y;
+
+    pt(){}
+    pt(double x,double y): x(x),y(y) {}
+    
+    pt operator+(pt src){
+        return pt(x+src.x,y+src.y);
+    }
+
+    pt operator-(pt src){
+        return pt(x-src.x,y-src.y);
+    }
+
+    double operator*(pt src){//dot product
+        return x*src.x + y*src.y;
+    }
+
+    pt operator*(double src){
+        return pt(x*src,y*src);
+    }        
+
+    double operator^(pt src){//cross
+        return x*src.y-y*src.x;
+    }
+
+    bool operator==(pt src){
+        return(x==src.x && y==src.y);
+    }
+
+    double dis(pt src) {
+        return sqrt((x - src.x)*(x - src.x) + (y - src.y)*(y - src.y));
+    }
+};
+
+struct line{
+    pt sp,ep;
+
+    line(){}
+    line(pt sp,pt ep): sp(sp),ep(ep) {}
+
+    double cp(pt src){
+        return (ep-sp) ^ (src-sp);//cross product
+    }
+
+};
+double M;
+vec<int> r(4);//radius
+vec<int> o{0,1,2,3};//order
+vec<pt> pts(4);//4 centers
+pt center;//outter circle
+vec<double> deg(4);
+
+bool go(int now){
+    if(now == 4) return true;
+
+    if(now == 0 ){//first
+        pts[o[0]] = pt(0 , r[o[0]] );
+        deg[o[0]] = pi * 3/2;//270
+        if (go(1)){
+            return 1;
+        }
+    }
+
+    else{//2th~4th
+        for(int i=0;i<=now-1;i++){
+            double a = r[o[now]] + r[o[i]];
+            double b = M - r[o[i]];
+            double c = M - r[o[now]];
+            
+            vec<double>noworder = {a,b,c};
+            sort(al(noworder));
+            if(noworder[0] + noworder[1] <= noworder[2]) continue;//they can't form a triangle
+
+            deg[o[now]] = acos( (b*b + c*c - a*a) / (2 * b * c) ) + deg[o[i]];
+            //c^2 = a^2 + b^2 - 2ab * cos(theta)
+            pts[o[now]] = center + pt( cos( deg[o[now]] ) * c , sin( deg[o[now]] ) * c);
+
+            bool good = true;
+            for(int k=0;k<=now-1;k++){
+                if( fcmp( pts[o[now]].dis( pts[o[k]] ) , r[ o[now] ] + r[ o[k] ])<0) good = false;
+                //dist between now and others >= radius now+others
+            }
+            if(!good) continue;
+            
+            if( fcmp(pts[o[now]].dis(center) , c) > 0 ) continue;
+            //out the border
+
+            if(go(now+1)) return 1;
+        }
+    }
+    return 0;
+
+}
+int main(){
+    int kase=0;
+
+    while(cin>>r[0]){
+
+        if(r[0]==0) break;
+        kase++;
+        cin>>r[1]>>r[2]>>r[3];
+        double L=1;
+        double R=20000+20000*(sqrt(2))+1;
+
+        while(fcmp(R-L,0)){
+            M=(L+R)/2;
+            center = pt(0,M);//ori at 0,0
+            o = {0,1,2,3};
+            bool ok;
+
+            do{
+                ok = go(0);
+                if(ok) break;
+            }while(next_permutation(al(o)));
+
+            if(ok) R = M;
+            else L = M;
+        }
+
+        cout << "Case " << kase << ": " << round(L) << endl;
+    }
+}
