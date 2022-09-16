@@ -1,0 +1,80 @@
+#include <bits/stdc++.h>
+using namespace std;
+#define ll long long
+
+const double pi = acos(-1);
+
+struct point{
+    int x,y;
+    point(){}
+    point(int x,int y): x(x),y(y){}
+};
+
+const int st = (60*5 + 37) * 60;
+const int ed = (60*18 + 17) * 60;
+
+int main(){
+    int n,kase=0;
+    while(cin >> n ){
+        if (!n) break;
+        ll w,h;
+        cin >> w >> h;
+        vector<ll> m(n),d(n),pre(n);
+        for(int i=0;i<n-1;i++){
+            cin >> m[i] >> d[i];
+        }
+        cin >> m[n-1];
+        pre[0] = 0;//suffix
+        for(int i=0;i<n;i++){
+            pre[i] = pre[i-1] + d[i-1];
+        }
+        int query;
+        kase++;
+        cout << "Apartment Complex: " << kase << endl;
+        while(cin >> query){
+            if (!query) break;
+            double ltheta =0.0,rtheta = 0.0;
+            int bid = query % 100 -1;//building idx 0-base
+            int aid = query / 100;//apartment 1-base
+
+            if(query <100 || bid>=m.size() || aid > m[bid]){
+                cout << "Apartment " << query << ": Does not exist" << endl;
+                continue;
+            }
+            //tan(degree) = y/x  -> degree = atan(y/x)
+            for(int i=0;i<bid;i++){//左邊的
+                if(m[i]<=(aid-1)) continue;//左邊的擋不到他
+                int yy = (m[i] - (aid-1))*h;//y
+                int xx = pre[bid] - pre[i] + w*(bid - i - 1);
+                ltheta = max(ltheta,atan(yy / (double)xx));
+            }
+            
+            for (int i = bid +  1; i < n; i++){
+                if(m[i] <=(aid-1))continue;
+                int yy = (m[i] - (aid-1)) * h;
+                int xx = pre[i] - pre[bid] + w * (i-bid - 1);
+
+                rtheta = max(rtheta, atan(yy / (double)xx));
+            }
+            
+            
+            int ansst = (ltheta/pi)*(ed-st) + st;
+            int ansed = (1-(rtheta/pi))*(ed-st) + st;
+            
+            int sth = ansst / 3600;//hr
+            int stm = (ansst % 3600) / 60;//min
+            int sts = (ansst % 60);//second
+            int edh = ansed / 3600;
+            int edm = (ansed % 3600) / 60;
+            int eds = (ansed % 60);
+            
+            cout << "Apartment " << query << ": ";
+            cout << setw(2) << setfill('0') << sth << ":" << setw(2) << setfill('0') << stm << ":" << setw(2) << setfill('0') << sts;
+            cout << " - ";
+            cout << setw(2) << setfill('0') << edh<< ":" << setw(2) << setfill('0') << edm<< ":" << setw(2) << setfill('0') << eds;
+            cout << endl;
+        }
+
+
+    }
+}
