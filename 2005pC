@@ -1,0 +1,114 @@
+#include<bits/stdc++.h>
+using namespace std;
+int NC,DC,NR,judge;
+vector <pair<int,int>> graph[21];
+
+int judgecity[21];
+int nowcnt,anscnt;
+long long nowlength,anslength;
+int nownextcity[21];
+int ansnextcity[21];
+vector<int> nowlexico(21);
+vector<int> anslexico(21);
+
+void copyy(){
+    anscnt = nowcnt;
+    anslength = nowlength;
+    anslexico = nowlexico;
+    for(int i=0;i<21;i++)
+        ansnextcity[i] = nownextcity[i];
+}
+int main(){
+    cin >> NC;
+    int kase=0;
+    while(NC!= -1){
+        //init
+		for(int i=0;i<21;i++){
+			nowlexico[i]=21;
+			anslexico[i]=21;
+		}
+		memset(nownextcity,0,sizeof(nownextcity));
+		memset(ansnextcity,0,sizeof(ansnextcity));
+		memset(judgecity,0,sizeof(judgecity));
+		anscnt=2147483;
+		nowlength=0;
+		anslength=0x3f3f3f3f;
+		for(int i=0 ; i<21 ; i++)
+        graph[i].clear();
+        
+        //input
+        
+        cin>> DC >> NR;//destination,roads
+        int u=0,v=0,l=0;
+        for(int i=0;i<NR;i++){
+            cin >> u >> v >> l;
+            graph[u].push_back(make_pair(v,l));
+            graph[v].push_back(make_pair(u,l));
+        }
+        cin >> judge;
+        for(int i=0;i<judge;i++)
+            cin >> judgecity[i];
+            
+        //algorithm
+        
+        for(int i=0;i < (1 << NC);i++){
+            bitset<21> visit(i);
+            for(int j=0;j<judge;j++){
+                visit[judgecity[j]] = 0;
+            }
+            visit[DC] = 0;//0:must to visit
+            int needtobevisit = visit.count();
+            needtobevisit = NC - needtobevisit;
+            priority_queue<pair<int,int>, vector<pair<int,int>>, greater<pair<int,int>> > pq;
+            pq.push(make_pair(0,DC));
+            nowcnt =0;
+            while(!pq.empty()){
+                auto node = pq.top();
+                pq.pop();
+                if(visit[node.second]==1) continue;//visited
+                visit[node.second] = 1;
+                nowcnt++;
+                nowlength += node.first;
+                if(nowcnt == needtobevisit) break;
+                for(auto adjnode:graph[node.second]){
+                    if(visit[adjnode.first]==1) continue;
+
+                    pq.push(make_pair(adjnode.second,adjnode.first));
+                    nownextcity[adjnode.first] = node.second;
+                    nowlexico.push_back(adjnode.second);
+                }
+            }
+            if(nowlength < anslength) copyy();
+            else if(nowlength == anslength){
+                 if (nowcnt < anscnt) copyy();
+                 else if(nowcnt == anscnt){
+                     sort(nowlexico.begin(),nowlexico.end());
+                     for (int jj=0;i<NC;i++){
+                     if(nowlexico[jj] < anslexico[jj])
+                         copyy();
+                     }
+                }
+            }
+        }
+
+
+        //output
+        kase++;
+        cout <<"Case "<<kase<<": distance = "<<anslength<<endl;
+        for(int i=0;i<judge;i++){
+            cout <<"   ";
+            int x=judgecity[i];
+            while(x != DC){
+                cout << x << "-";
+                x = ansnextcity[x];
+            }
+            cout <<x << endl;
+        }
+		cout << endl;
+		
+        //next round
+        
+        cin >> NC;
+    }
+    return 0;
+}
