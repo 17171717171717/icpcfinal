@@ -1,0 +1,171 @@
+#include<bits/stdc++.h>
+using namespace std;
+#define F first
+#define S second
+#define vec vector
+#define mp make_pair
+using pii = pair<int, int>;
+using ll = long long;
+#define eb emplace_back
+#define al(x) x.begin(), x.end()
+double fcmp(double a, double b, double eps = 1e-9) {
+    if (fabs(a-b) < eps) return 0;
+    return (a > b)*2-1;
+}
+const int INF = 0x3f3f3f3f;
+double pi = acos(-1);
+struct pt{
+
+    double x,y;
+
+    pt(){}
+    pt(double x,double y): x(x),y(y) {}
+    
+    pt operator+(pt src){
+        return pt(x+src.x,y+src.y);
+    }
+
+    pt operator-(pt src){
+        return pt(x-src.x,y-src.y);
+    }
+
+    double operator*(pt src){//dot product
+        return x*src.x + y*src.y;
+    }
+
+    pt operator*(double src){
+        return pt(x*src,y*src);
+    }        
+
+    double operator^(pt src){//cross
+        return x*src.y-y*src.x;
+    }
+
+    bool operator==(pt src){
+        return(x==src.x && y==src.y);
+    }
+
+};
+
+struct line{
+    pt sp,ep;
+
+    line(){}
+    line(pt sp,pt ep): sp(sp),ep(ep) {}
+
+    double cp(pt src){
+        return (ep-sp) ^ (src-sp);//cross product
+    }
+
+};
+
+struct pyramids{
+    int w;
+    char type;
+    int cube;
+    string name = "";
+    pyramids(){    }
+
+    pyramids(int w,char type,int cube,string name): w(w),type(type),cube(cube),name(name){    }
+};
+
+vector<pyramids>pyramid;
+int c = 1000000;
+int cubes;
+int ps;
+int dp[350][1000005];
+
+bool cmp(const pyramids &a,const pyramids &b){
+    if(a.cube!=b.cube)return a.cube<b.cube;//smaller first
+    else return a.type>b.type;//L -> H
+}
+void build(){
+    int nowcube = 1;
+    for(int i=2;;i++){
+        if(nowcube+i*i<=c){
+            nowcube += i*i;
+            pyramid.eb(i,'H',nowcube,to_string(i)+"H");
+        }
+        else break;
+    }
+    nowcube = 1;
+    for(int i=3;;i+=2){
+        if(nowcube+i*i<=c){
+            nowcube += i*i;
+            pyramid.eb(i,'L',nowcube,to_string(i)+"L");
+        }
+        else break;
+    }
+    nowcube = 4;
+    for(int i=4;;i+=2){
+        if(nowcube+i*i<=c){
+            nowcube += i*i;
+            pyramid.eb(i,'L',nowcube,to_string(i)+"L");
+        }
+        else break;
+    }
+
+    sort(pyramid.begin(),pyramid.end(),cmp);
+
+    ps = pyramid.size();
+
+    for(int i=0;i<350;i++){
+        for(int j=0;j<1000005;j++){
+            dp[i][j] = 1000005;
+        }
+    }
+    dp[0][0]= 0;
+//s[i] 表示第 i 個金字塔使用的cube數量
+//f(i, j) = min( f(i-1, j), f(i-1, j-s[i])+1 ), when f(i-1, j) != f(i-1, j-s[i])+1
+//f(i, j) = f(i-1, j-s[i])+1,  when f(i-1, j) == f(i-1, j-s[i])+1
+
+    for(int i=1;i<=ps;i++){
+        int num = pyramid[i-1].cube;
+        for(int j=0;j<=c;j++){
+            if(j-num >= 0){
+                dp[i][j] = min(dp[i-1][j], dp[i-1][j-num]+1);
+            }
+
+            //j-nowi<0.
+            else dp[i][j] = dp[i-1][j];
+        }
+    }
+}
+int main(){
+    int kase=0;
+    build();
+    while(cin>>cubes){
+        if(!cubes)break;
+        kase++;
+
+        if(dp[ps][cubes] == 1000005)
+            cout << "Case " << kase << ": impossible" << endl;
+        else{
+            cout << "Case " << kase << ": ";
+
+            vector<string>ans;
+            int now = cubes;
+            int nowid = ps;
+            //backtracking
+            while(nowid>0){
+                int nowcube = pyramid[nowid-1].cube;
+                if(now >= nowcube){
+                    if(dp[nowid-1][now-nowcube] +1 == dp[nowid][now]){
+                        ans.eb(pyramid[nowid-1].name);
+                        now -= nowcube;
+                    }
+                }
+                nowid--;
+            }
+
+            if(ans.size()>=2)
+            {
+                for(int i=0 ; i<=ans.size()-2 ; i++)
+                    cout << ans[i] << " ";
+            }
+            cout << ans[ans.size()-1] << endl;
+        }
+    }
+}
+
+
