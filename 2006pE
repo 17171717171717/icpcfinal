@@ -1,0 +1,75 @@
+#include <bits/stdc++.h>
+using namespace std;
+//0 is must the end
+//0[1....0] brute
+int N,L,ans;
+string s;
+
+void recur(int idx,int cp,int cp1){//now idx,compressor n ,compressor 1
+        //11 -> 11 or 111
+        if(ans >= 2 ) return;
+        
+        if((idx == s.length()) && (cp == N) &&( cp1 == L)){
+            ans++;
+            return ;
+        }
+
+        if((idx > s.length() )|| (cp > N )|| (cp1 > L)){
+                return ;
+        }
+
+        if(s[idx]=='0'){//must start at '1',no need to do'0'
+            recur(idx + 1, cp + 1 , cp1);
+            return;//no need to do others
+        }
+        // binary to the decimal
+        //ASCII
+        int temp=0;
+        for(int i=idx; i<s.length();i++){
+            temp *= 2;//how many 1's do the compression
+            temp += s[i] - '0';
+
+            if((cp+temp> N  )|| (cp1 + temp > L)) break;
+
+
+            //11 to 111,0 must be at the enumerate end so do the recur
+            if(s[i+1] != '1' && (temp != 2)){//10 no decode
+                recur(i+1,cp+temp,cp1+temp);
+            }
+
+
+        }
+        //11 to 11
+        if((s[idx+1] == '1') && (s[idx+2] != '1')){//110.... , to the third pos
+            recur(idx+2,cp+2,cp1+2);//11 no decode
+        }
+
+
+
+
+}
+int main(){
+    int kase=0;
+    while(cin >> N >> L){
+        if(N==0 && L==0) break;
+        cin >> s;
+        ans = 0;
+
+        recur(0,0,0);
+
+
+        kase++;
+        cout << "Case #" << kase << ": ";
+
+        if(ans == 0)
+            cout << "NO" << endl;
+        else if(ans == 1)
+            cout << "YES" << endl;
+        else
+            cout << "NOT UNIQUE" << endl;
+
+    }
+    return 0;
+
+
+}
