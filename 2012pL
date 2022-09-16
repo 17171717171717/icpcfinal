@@ -1,0 +1,171 @@
+#include<bits/stdc++.h>
+using namespace std;
+#define F first
+#define S second
+#define vec vector
+using pii = pair<int, int>;
+using ll = long long;
+#define eb emplace_back
+#define al(x) x.begin(), x.end()
+double fcmp(double a, double b, double eps = 1e-9) {
+    if (fabs(a-b) < eps) return 0;
+    return (a > b)*2-1;
+}
+const int INF = 0x3f3f3f3f;
+struct pt{
+
+    double x,y;
+
+    pt(){}
+    pt(double x,double y): x(x),y(y) {}
+    
+    pt operator+(pt src){
+        return pt(x+src.x,y+src.y);
+    }
+
+    pt operator-(pt src){
+        return pt(x-src.x,y-src.y);
+    }
+
+    double operator*(pt src){//dot product
+        return x*src.x + y*src.y;
+    }
+
+    pt operator*(double src){
+        return pt(x*src,y*src);
+    }        
+
+    double operator^(pt src){//cross
+        return x*src.y-y*src.x;
+    }
+
+    bool operator==(pt src){
+        return(x==src.x && y==src.y);
+    }
+
+};
+
+struct line{
+    pt sp,ep;
+
+    line(){}
+    line(pt sp,pt ep): sp(sp),ep(ep) {}
+
+    double cp(pt src){
+        return (ep-sp) ^ (src-sp);//cross product
+    }
+
+};
+//1. take over時肯定選最大的 (greedy choice)
+//2. Merge時肯定選最大的兩個 (greedy choice)
+//3. 沒辦法take over最大的時，Merge
+//4. Overtake後對方肯定接merge
+
+/*
+
+Winning constraint:
+
+Can take over after opponent merge.
+
+枚舉first overtake or merge
+
+*/
+
+deque<ll>a,b,ta,tb;
+
+bool takeover(int now){//0: a eat b, 1: b eat a
+    if(now){
+        if(b[0] > a[0]){
+            a.pop_front();
+            return true;
+        }
+        else return false;
+    }
+    else{
+        if(a[0]>b[0]){
+            b.pop_front();
+            return true;
+        }
+        else return false;
+    }
+}
+
+bool merge(int now){// 0: a merge , 1 : b merge
+    if(now){
+        if(b.size()>=2){
+            ll tmp = b[0]+b[1];
+            b.pop_front();
+            b.pop_front();
+            b.emplace_front(tmp);
+            return 1;
+        }
+        else return 0;
+    }
+
+    else{
+        if(a.size()>=2){
+            ll tmp = a[0]+a[1];
+            a.pop_front();
+            a.pop_front();
+            a.emplace_front(tmp);
+            return 1;
+        }
+        else return 0;
+    }
+}
+
+bool go(int i){
+    if(i){//a go merge
+        if(!merge(0))return false;//cant takeover && cant merge: loser
+    }
+    else{//a go takeover first
+        if(!takeover(0))return false;//a cant eat b
+    }
+
+    int now=1;//b turn
+    while(1){
+        if(a.size()==0)return 0;
+        if(b.size()==0)return 1;
+
+        if(takeover(now)){//b eat a -> a eat b
+            now = 1 - now;
+            continue;
+        }
+        else{
+            merge(now);//a merge -> b merge... ,,, cant takeover->merge
+            now = 1 - now;
+            continue;
+            }
+    }
+}
+int main(){
+    int n,m,kase=0;
+    while(cin>>n>>m){
+        a.resize(n);
+        b.resize(m);
+
+        for(auto &i : a)
+            cin >> i;
+        for(auto &i : b){
+            cin >> i;
+        }
+
+        sort(al(a),greater<ll>());//bigger to smaller
+        sort(al(b),greater<ll>());
+
+        ta = a;
+        tb = b;
+
+        kase++;
+        if (go(0)) {//a go first
+            cout << "Case " << kase << ": Takeover Incorporated\n";
+            continue;
+        }
+        
+        a = ta;
+        b = tb;
+        
+        cout << "Case " << kase << ": " << (go(1) ? "Takeover Incorporated" : "Buyout Limited") << endl;
+
+    }
+}
