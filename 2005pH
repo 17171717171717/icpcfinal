@@ -1,0 +1,91 @@
+#include<bits/stdc++.h>
+using namespace std;
+
+vector<pair<int,int>>board,target;//<x,y>
+const int INF = 1e9;
+int moves,n;
+
+int movee(int i,int k){
+    return abs (target[k].first - board[i].first) + abs(target[k].second - board[i].second);
+}
+
+//dp(i) ---->>> i pieces to target grid moves ->> f(i)=min(f(k)+step(num(i),i xor k))  ,for all k satisfy num(i)-num(k)=1 and num(i xor k ) =1 <<i,k 1's diff = 1>>  ,,, num(i)=#1's in i
+
+
+void sol(){
+
+    vector<int>dp(1<<n,INF);//2^n length array,all value = INF ,,, n bits,C(n,i)for i=0~n-1 -> 2^n possibilities
+    dp[0]=0;
+
+    for(int i=0;i<n;i++){
+        string str = string(n-i, '0') + string(i, '1');//n-i 0's, i 1's
+        do{
+
+            int base=1,ones=0;
+
+            for(int k=n-1;k>=0;k--){//string from string right to left do binary covert
+               ones += (str[k] - '0') * base; //ASCII code 1-0=1
+               base = base * 2; // e.g:1+2+4+8+16+32+64... -> 1111111_binary
+            }
+
+            //do ones+1 1's dp
+            for(int k=0;k<n;k++){//assume n=8,num = 00000111,k=10000000 \\ num=0000111,k=00000010
+                if((ones & (1<<k)) == 0){// k pos != 1
+                    dp[ones | (1<<k)] = min(dp[ones | (1<<k)] , dp[ones]+movee(i,k));//
+                }
+            }
+
+        }while(next_permutation(str.begin(),str.end()));
+    }
+
+    moves = min(dp[(1<<n)-1],moves);
+}
+//time:(2n+2)(2^n * n^2)=O n^3 * 2^n
+int main(){
+    int kase=0;
+    while(cin >> n){
+        if (n==0) break;
+        //chessboard info
+        int x,y;
+        moves = INF;
+        board.resize(n);
+        target.resize(n);
+        for(int i=0;i<n;i++){
+            cin >> x >> y;
+            //index to n pieces, xy base to 0
+            x--;
+            y--;
+            board[i].first=x;
+            board[i].second=y;
+        }
+        //target is a straight line
+        for(int i=0;i<n;i++){                //index to n target pieces
+
+            for(int j=0;j<n;j++){//i=0,target 1 xy=01 02 03 04 05
+                target[j].first = i;
+                target[j].second = j;
+            }
+            sol();
+
+            for(int j=0;j<n;j++){//i=0,target 1 xy=10 20 30 40 50
+                target[j].second =i;
+                target[j].first = j;
+            }
+            sol();
+        }
+        //diaognal line
+        for(int i=0;i<n;i++){
+            target[i].first = target[i].second = i;
+        }
+        sol();
+        for(int i=0;i<n;i++){
+            target[i].first =i;
+            target[i].second=n-i-1;
+        }
+        sol();
+
+        //output
+        kase++;
+        cout << "Board "<< kase <<": " << moves <<" moves required."<<endl<<endl;
+    }
+}
