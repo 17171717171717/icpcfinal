@@ -1,0 +1,85 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+const int INF = 0x3f3f3f3f;
+vector<vector<int>>g(55,vector<int>(55));
+
+int main(){
+        int P,R,kase=0;;
+        while(cin >> P >> R){
+
+                if(P==0 && R==0) break;
+
+                //init
+                for(int i=0;i<P;i++){
+                        for(int j=0;j<P;j++){
+                                g[i][j]=INF;
+                        }
+                }
+                for(int i=0;i<P;i++)
+                        g[i][i]=0;
+
+                //trans to graph
+                map<string,int>names;
+                map<string,int>::iterator it1,it2;
+                int id=0;
+
+                for(int i=0;i<R;i++){
+                        string p1,p2;
+                        cin >>p1 >> p2;
+                        it1 = names.find(p1);
+                        if(it1==names.end()){
+                                names[p1] = id;
+                                id++;
+                        }
+                        it2 = names.find(p2);
+                        if(it2 == names.end()){
+                                names[p2] = id;
+                                id++;
+                        }
+                        g[names[p1]][names[p2]] = 1;
+                        g[names[p2]][names[p1]] = 1;
+                }
+
+
+                //algo allpair
+                for(int i=0;i<P;i++){
+                        for(int j=0;j<P;j++){
+                                for(int k=0;k<P;k++){
+                                        g[j][k]=min(g[j][k],g[j][i]+g[i][k]);
+                                }
+
+                        }
+
+                }
+                //algo diameter
+                int dia=-1;
+                int flag=0;
+				/*for(int i=0 ; i<P ; i++)
+					{
+						for(int j=0 ; j<=P ; j++)
+						{
+						    if(i != j){
+        			           dia = max(dia ,g[i][j]);
+							if(g[i][j] == INF) flag =1;
+						    }
+						}
+					}*/
+				for(int i=0;i<P;i++){
+                        for(int j=0;j<P;j++){
+                                if(i!=j){
+                                	dia = max(dia,g[i][j]);
+                                	if(g[i][j] == INF) flag=1;
+                                }
+                        }
+                }
+                //out
+                kase++;
+                cout << "Network " << kase << ": ";
+                if(flag == 1)
+                        cout << "DISCONNECTED" << endl<< endl;
+                else
+                        cout << dia << endl << endl;
+        }
+        return 0;
+}
