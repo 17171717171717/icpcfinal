@@ -1,0 +1,271 @@
+#include<bits/stdc++.h>
+using namespace std;
+#define F first
+#define S second
+#define vec vector
+using pii = pair<int, int>;
+using ll = long long;
+#define eb emplace_back
+#define al(x) x.begin(), x.end()
+#define mp make_pair
+double fcmp(double a, double b, double eps = 1e-9) {
+    if (fabs(a-b) < eps) return 0;
+    return (a > b)*2-1;
+}
+const int INF = 0x3f3f3f3f;
+#define LEFT 0
+#define RIGHT 1
+#define DOWN 2
+#define UP 3
+
+struct line {
+    int spx, spy, epx, epy;
+    
+    line() {}
+    line(int spx, int spy, int epx, int epy) : spx(spx), spy(spy), epx(epx), epy(epy) {}
+};
+
+struct event{
+    int type;
+    int l,r;
+    int id;
+    event(){}
+    event(int type,int l,int r,int id): type(type),l(l),r(r),id(id){}
+
+    bool operator<(event a)const{
+        if(id != a.id) return id < a.id;
+        return type < a.type;
+    }
+};
+
+struct segt{
+    int sz;
+    vec<int>st;
+
+    segt(){}
+
+    segt(int sz):sz(sz){
+        st.resize(4*sz);
+    }
+
+    void pull(int id){
+        st[id] = st[id*2] + st[id*2+1];
+    }
+
+    void modify(int l, int r,int x,int id,int val){
+        if(l==r){
+            st[id] += val;
+            return;
+        }
+
+        int m = (l+r)/2;
+
+        if(x <= m) modify(l,m,x,id*2,val);
+
+        else modify(m+1,r,x,id*2+1,val);
+
+        pull(id);
+    }
+
+    int query(int ql,int qr,int l,int r, int id){
+        if(l<=ql && qr <= r)return st[id];
+        else if (qr<l || r<ql) return 0;
+
+        int m =(ql+qr)/2;
+        return query(ql,m,l,r,id*2) + query(m+1,qr,l,r,id*2+1);
+    }
+
+    int find(int ql,int qr,int l,int r,int id){
+        if (qr < l || r < ql)return -1;
+        if (ql==qr) return ql;
+
+        int m = (ql + qr ) / 2;
+
+        if(st[id*2] != 0){
+            int tmppp = find(ql,m,l,r,id*2);
+            if( tmppp != -1 )return tmppp;
+        }
+        return find(m+1,qr,l,r,id*2+1);
+    }
+};
+pii pos;
+ll ans;
+ll szz=1000005 , _n = 1000005;
+
+void check(vec<line>h,vec<line>v){
+    vec<event>es;
+    segt st(szz);
+
+    for(auto i : h){
+        int stt = min(i.spy,i.epy);
+        int edd = max(i.spy,i.epy);
+        es.eb(1,i.spx,i.spx,stt+1);//in
+        es.eb(3,i.spx,i.spx,edd-1);//out
+    }
+
+    for(auto i:v){
+        int stt = min(i.spx,i.epx);
+        int edd = max(i.spx,i.epx);
+        es.eb(2,stt+1,edd-1,i.spy);//check
+    }
+
+    sort(al(es));
+
+    for(auto i:es){
+
+        switch(i.type){
+            case 1:
+                st.modify(0 , szz-1 , i.l , 1 , 1);//all +1
+                break;
+
+            case 2:{
+                int tmpp = st.query(0 , szz-1 , i.l , i.r , 1);//query the intersection pts
+                if(tmpp){
+                    ans += tmpp;
+                    pos = min(pos,{st.find(0,szz-1,i.l,i.r,1) , i.id});//check row->column
+                }
+                break;
+            }
+
+            case 3:
+                st.modify(0,szz-1 , i.l , 1,-1);//ALL-1
+        }
+    }
+}
+
+int main(){
+    int r, c, m, n, kase = 1;
+    while(cin >> r >> c >> m >> n){
+        vec<vec<int>> row(r), col(c);
+        map<pii, int> g;
+
+        int x, y;
+        for (int i = 0; i < m; i++) {
+            cin >> x >> y;
+            x--, y--;
+            
+            row[x].eb(y);
+            col[y].eb(x);
+            g[mp(x, y)] = 1;
+        }
+
+        for (int i = 0; i < n; i++) {
+            cin >> x >> y;
+            x--, y--;
+            
+            row[x].eb(y);
+            col[y].eb(x);
+            g[mp(x, y)] = 2;
+        }
+        
+        for (auto &i : row)
+            sort(al(i));//up to down
+        for (auto &i : col)
+            sort(al(i));//left to right
+        
+        vec<vec<line>> h(2), v(2);//detector lr ud , laser lr ud
+
+        bool gg = false;
+        for (int i = 0; i < 2; i++) {
+            int tmpr, tmpc, dir;
+            //l0 r1 d2 u3
+            if (i)
+                tmpr = r-1, tmpc = c, dir = LEFT;//1:detector
+            else
+                tmpr = 0, tmpc = -1, dir = RIGHT;//0:laser,first
+                
+            bool good = false;
+
+            while(!good){
+                switch(dir){
+                    case UP:{
+                        auto it = lower_bound(al(col[tmpc]),tmpr);//the row higher than or equal tmpr
+                        
+                        if(it != col[tmpc].begin()){//need to turn
+                            
+                            v[i].eb(tmpr,tmpc,*(--it),tmpc);//nowrow,nowcol,turn row,turn column
+                            tmpr = *it;//now row
+                            dir = (g[mp(tmpr,tmpc)] == 1 ? RIGHT : LEFT);
+                        }else{
+                            v[i].eb(tmpr,tmpc,-1,tmpc);//finish -> -1
+                            good = true;
+                        }
+                        break;
+                    }
+
+                    case DOWN:{
+                        auto it = upper_bound(al(col[tmpc]),tmpr);//the row lower than tmpr
+                        if(it != col[tmpc].end()){//need to turn
+            
+                            v[i].eb(tmpr,tmpc,*it,tmpc);//nowrow,nowcol,turn row,turn column
+                            tmpr = *it;//now row
+                            dir = (g[mp(tmpr,tmpc)] == 1 ? LEFT : RIGHT);
+
+//                            dir = (g[mp(tmpr,tmpc)] == 1 ? RIGHT : LEFT);
+                        }else{
+                            v[i].eb(tmpr,tmpc,r,tmpc);//finish -> -1
+                            good = true;
+                        }
+                        break;
+                    }
+
+                    case LEFT:{
+                        auto it = lower_bound(al(row[tmpr]),tmpc);//the col lower than now col
+                        if(it != row[tmpr].begin()){//need to turn
+                       
+                            h[i].eb(tmpr,tmpc,tmpr,*(--it));//nowrow,nowcol,turn row,turn column
+                            tmpc = *it;//now row
+                            dir = (g[mp(tmpr,tmpc)] == 1 ? DOWN : UP);
+
+//                            dir = (g[mp(tmpr,tmpc)] == 1 ? RIGHT : LEFT);
+                        }else{
+                            h[i].eb(tmpr,tmpc,tmpr,-1);//finish -> -1
+                            good = true;
+                        }
+                        break;
+                    }
+                
+                    case RIGHT:{
+                        auto it = upper_bound(al(row[tmpr]),tmpc);//the row lower than tmpr
+                        if(it != row[tmpr].end()){//need to turn
+            
+                            h[i].eb(tmpr,tmpc,tmpr,*it);//nowrow,nowcol,turn row,turn column
+                            tmpc = *it;//now row
+                            dir = (g[mp(tmpr,tmpc)] == 1 ? UP : DOWN);
+
+//                            dir = (g[mp(tmpr,tmpc)] == 1 ? RIGHT : LEFT);
+                        }else{//no mirror on the way
+                            h[i].eb(tmpr,tmpc,tmpr,c);//finish -> -1
+                            good = true;
+
+                            if(i == 0 && tmpr == r-1)
+                                gg = true;//laser go to detector
+
+                        }  
+                    }
+                }
+            }    
+        }
+
+        if(gg)
+            cout << "Case " << kase++ << ": 0" << endl;
+        else{
+            pos = {INF,INF};
+            ans = 0;
+            check(h[0],v[1]);
+            check(h[1],v[0]);
+            if(ans == 0){
+                cout << "Case " << kase++ << ": impossible" << endl;
+            }
+            else {
+                cout << "Case " << kase++ << ": " << ans;
+                
+                if (ans)
+                    cout << ' ' << pos.F+1 << ' ' << pos.S+1 << endl;
+                else
+                    cout << endl;
+            }
+
+        }
+    }
+}
