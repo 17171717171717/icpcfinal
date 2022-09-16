@@ -1,0 +1,175 @@
+#include<bits/stdc++.h>
+using namespace std;
+#define F first
+#define S second
+#define vec vector
+using pii = pair<int, int>;
+using ll = long long;
+#define eb emplace_back
+#define al(x) x.begin(), x.end()
+double fcmp(double a, double b, double eps = 1e-9) {
+    if (fabs(a-b) < eps) return 0;
+    return (a > b)*2-1;
+}
+const int INF = 0x3f3f3f3f;
+struct pt{
+
+    double x,y;
+
+    pt(){}
+    pt(double x,double y): x(x),y(y) {}
+    
+    pt operator+(pt src){
+        return pt(x+src.x,y+src.y);
+    }
+
+    pt operator-(pt src){
+        return pt(x-src.x,y-src.y);
+    }
+
+    double operator*(pt src){//dot product
+        return x*src.x + y*src.y;
+    }
+
+    pt operator*(double src){
+        return pt(x*src,y*src);
+    }        
+
+    double operator^(pt src){//cross
+        return x*src.y-y*src.x;
+    }
+
+    bool operator==(pt src)const{
+        return x==src.x && y==src.y;
+    }
+
+    bool operator!=(pt src) const {
+        return !(*this == src);
+    }
+    
+    double dis(pt src){
+        return sqrt((src.x-x)*(src.x-x) + (src.y-y)*(src.y-y));
+    }
+
+
+    bool operator<(const pt &src)const {
+        if (x != src.x)
+            return x < src.x;
+        return y < src.y;
+    }
+};
+struct line{
+    pt sp,ep;
+
+    line(){}
+    line(pt sp,pt ep): sp(sp),ep(ep) {}
+
+    double cp(pt src){
+        return (ep-sp) ^ (src-sp);//cross product
+    }
+
+};
+
+int cross(pt o, pt a, pt b)
+{
+    return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+}
+
+/*
+bool discmp(pt a,pt b){
+    return (a.y < b.y) || (a.y == b.y && a.x < b.x);
+}
+
+bool anglecmp(pt a, pt b)
+{
+    int c = cross(*pts.begin(), a, b);
+    return c > 0 || (c == 0 && *pts.begin().dis(a) < *pts.begin().dis(b));
+}
+*/
+void gramham(vector<pt>&pts,vector<pt>&convex){
+	/*
+    swap(pts[0], *min_element(pts.begin(),pts.end(),discmp));
+    sort(pts.begin()+1,pts.end(),anglecmp);
+    pts[n] = pts[0];
+    int m = 0;
+    for(int i=0;i<=n;i++){
+        while( m>=2 &&  cross( convex[m-2] , convex[m-1] , pts[i]) <= 0){ 
+            m--;
+        }
+        convex[m] = pts[i];
+        m++;
+    }
+    m--;
+    return m;*/
+    sort(pts.begin(),pts.end());
+    for(int i = 0; i < pts.size(); i++) {
+        while(convex.size()>1 && cross(convex[convex.size()-2],convex[convex.size()-1],pts[i]) <= 0){
+            convex.pop_back();
+        }
+        convex.push_back(pts[i]);
+    }   
+    int m = convex.size();
+
+    for(int i = pts.size()-2; i>=0;i--) {
+        while(convex.size()>m && cross(convex[convex.size()-2],convex[convex.size()-1],pts[i]) <= 0){
+            convex.pop_back();
+        }
+        convex.push_back(pts[i]);
+    }
+
+    if(!convex.empty()){
+        convex.pop_back();
+    }
+}
+vector<pt>pts,convex;
+//pt pts[505],convex[505];
+int n;
+
+int main(){
+    int kase=0;
+    while(cin >> n){
+        if(n==0) break;
+        pts.clear();
+        convex.clear();
+        int a,b;
+        for(int i=0;i<n;i++){
+            cin >> a >> b;
+            pt tmp;
+            tmp.x=a;
+            tmp.y=b;
+            pts.push_back(tmp);
+      //      cout << pts[i].x << " :X Y: "<<pts[i].y <<endl;
+        }
+        gramham(pts,convex);
+        int m = convex.size();
+        /*cout << "M:" << m << endl;
+        cout<<"convex:"<<endl;
+        for(int i=0;i<m;i++){
+            cout << convex[m].x << " :X Y: " <<convex[m].y << endl ;
+        }
+        cout<<"pts"<<endl;
+        for(int i=0;i<n;i++){
+            cout << pts[i].x << " :X Y: "<<pts[i].y <<endl;
+        }
+        cout << endl;*/
+        double ans = 0x3f3f3f3f;
+        int i,j,k;
+        for(i = 0, j = m-1; i < m; j = i, i++) {
+            double na = -(convex[i].y-convex[j].y), nb = convex[i].x-convex[j].x;
+            double c = -(na*convex[i].x+nb*convex[i].y);
+            double len = hypot(na , nb);
+            double tmp = 0;
+            for(k = 0; k < n; k++){
+            //    cout << fabs(na*pts[k].x+nb*pts[k].y+c)/(len) << endl;
+                tmp = max(tmp, fabs(na*pts[k].x+nb*pts[k].y+c)/(len));
+            }
+            ans = min(ans, tmp);
+        }
+		//cout << endl;
+        kase++;
+        ans*=100;
+        ans = ceil(ans);
+        ans/=100;
+        cout << "Case "<<kase << ": " <<ans<<endl;
+    }
+}
