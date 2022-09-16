@@ -1,0 +1,154 @@
+#include<bits/stdc++.h>
+using namespace std;
+
+struct recurnode{
+    vector<int>deck;
+    vector<pair<int,int>>mistake;//perfectotimes,location
+    int remainrecur;
+
+};
+vector<vector<int>> perfecto(11,vector<int>(52));
+recurnode ans;
+
+bool cmp(pair<int,int>&a,pair<int,int>&b){
+    return b.second < a.second;
+}
+
+vector<int>shuffle(vector<int>now){
+    vector<int>after(52);
+
+    for (int i = 0; i < 26; i++) {
+        after[i*2] = now[26+i];
+    }
+    for (int i = 0; i < 26; i++) {
+        after[i*2 + 1] = now[i];
+    }
+
+    return after;
+}
+vector<int> negshuffle(vector<int> now) {
+    vector<int> after(52);
+
+    for (int i = 0; i < 52; i += 2) 
+        after[i/2 + 26] = now[i];
+    for (int i = 1; i < 52; i += 2)
+        after[i/2] = now[i];
+
+    return after;
+}
+
+
+int differentcard(vector<int>a,vector<int>b ){
+    int aaa=0;
+    for(int i=0;i<52;i++){
+        if(a[i]!=b[i]) aaa++;
+    }
+    return aaa;
+}
+
+
+bool replacee(recurnode a,recurnode b){
+        if(a.mistake.size() < b.mistake.size()) return true;
+        else if(a.mistake.size() == b.mistake.size()){
+            for(int i=0 ; i <=a.mistake.size() ; i++ ){
+                if(a.mistake[i].second != b.mistake[i].second) {
+                    return a.mistake[i].second < b.mistake[i].second;
+                }
+            }
+        }
+        return false;
+}
+
+void recur(recurnode now){
+    //exit recur
+	int x = now.remainrecur;
+    if(differentcard(now.deck,perfecto[x]) ==0){
+        if(ans.remainrecur == -1 or replacee(now,ans) ){
+            ans = now;
+        }
+        return;
+    }
+    if(differentcard(now.deck,perfecto[x]) > now.remainrecur*2) {
+        return;
+    }
+
+    recurnode nextone;
+    for(int i=0;i<51;i++){//0~50 change with 1~51
+            if(now.deck[i]!=perfecto[now.remainrecur][i] or now.deck[i+1] != perfecto[now.remainrecur][i+1]){
+                   //at least one mistake
+                nextone = now;
+
+                swap(nextone.deck[i],nextone.deck[i+1]);
+                nextone.deck = negshuffle(nextone.deck);
+                nextone.mistake.emplace_back(nextone.remainrecur,i);
+                nextone.remainrecur--;
+
+                recur(nextone);
+            }
+    }
+    //all the possibilities after swap no mistake
+    nextone = now;
+    nextone.deck=negshuffle(nextone.deck);
+    nextone.remainrecur--;
+    recur(nextone);
+}
+
+
+int main(){
+    //perfecto
+    for(int i=0;i<52;i++)
+        perfecto[0][i] = i;
+    for(int kase=0;kase<10;kase++){
+        perfecto[kase+1] = shuffle(perfecto[kase]);
+    }
+
+    //input
+    int n,kasecnt=0;;
+    cin >> n;
+
+    //do
+    while (n--){
+        recurnode cur;
+        int kkkkkkkk;
+        ans.deck.clear();
+        ans.mistake.clear();
+        ans.remainrecur = -1;//nowshuffletimes,if1 :shuffle 1 times-> need to negshuffle 1 times
+        cur.deck.resize(52);
+        for(int i=0;i<52;i++){
+            cin >> kkkkkkkk;
+            cur.deck[i] = kkkkkkkk;
+        }
+
+        int kase;
+        int rightcnt=0,shuffletime;
+        for(kase=1;kase<=10;kase++){
+            rightcnt=0;
+            for(int i=0;i<52;i++){
+                if(cur.deck[i]==perfecto[kase][i]) rightcnt++;
+            
+            if(rightcnt>30){
+                cur.remainrecur=shuffletime=kase;
+                break;
+                }
+            }
+        }
+
+        //algo
+        kasecnt++;
+        cout << "Case " << kasecnt << endl;
+        cout << "Number of shuffles = " <<  shuffletime << endl;
+        recur(cur);
+
+
+        //output
+
+        if (ans.mistake.empty())
+                cout << "No error in any shuffle" << endl;
+        else {
+            for (int i = ans.mistake.size() - 1; i >= 0; i--) {
+            cout << "Error in shuffle " << ans.mistake[i].first  << " at location " << ans.mistake[i].second << endl;
+                }
+            }
+        cout << endl;
+    }
+}
