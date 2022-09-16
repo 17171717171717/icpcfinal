@@ -1,0 +1,189 @@
+#include<bits/stdc++.h>
+using namespace std;
+#define F first
+#define S second
+#define vec vector
+using pii = pair<int, int>;
+using ll = long long;
+#define eb emplace_back
+#define al(x) x.begin(), x.end()
+double fcmp(double a, double b, double eps = 1e-9) {
+    if (fabs(a-b) < eps) return 0;
+    return (a > b)*2-1;
+}
+const int INF = 0x3f3f3f3f;
+struct pt{
+
+    double x,y;
+
+    pt(){}
+    pt(double x,double y): x(x),y(y) {}
+    
+    pt operator+(pt src){
+        return pt(x+src.x,y+src.y);
+    }
+
+    pt operator-(pt src){
+        return pt(x-src.x,y-src.y);
+    }
+
+    double operator*(pt src){//dot product
+        return x*src.x + y*src.y;
+    }
+
+    pt operator*(double src){
+        return pt(x*src,y*src);
+    }        
+
+    double operator^(pt src){//cross
+        return x*src.y-y*src.x;
+    }
+
+    bool operator==(pt src){
+        return(x==src.x && y==src.y);
+    }
+
+};
+
+struct line{
+    pt sp,ep;
+
+    line(){}
+    line(pt sp,pt ep): sp(sp),ep(ep) {}
+
+    double cp(pt src){
+        return (ep-sp) ^ (src-sp);//cross product
+    }
+
+};
+
+
+int dp[2505][55];
+int _cnt[100005];
+int sz[2505];//total posibilities of size
+
+bool cmp(pii a,pii b){
+    if(a.F != b.F) return a.F > b.F;//bigger radius->smaller idx
+    else return a.S < b.S;
+}
+
+/*
+#split = 顏色變換次數 - #stack
+**顏色變換次數的base case = 1
+#merge = #stack - 1 + #split
+ans =  2*顏色變換次數 - 1 - #stack
+*/
+
+int main(){
+    int n,kase=0;
+    while(cin>>n){
+        memset(dp,INF,sizeof(dp));
+        memset(_cnt,0,sizeof(_cnt));
+        memset(sz,0,sizeof(sz));
+
+        vector<pii> plate;//radius, idx
+        
+        for(int i=0;i<n;i++){
+            int a,b;
+            cin >> a;
+            for(int j=0;j<a;j++){
+                cin >> b;
+                plate.eb(b,i);
+            }
+        }
+
+        sort(plate.begin(),plate.end(),cmp);
+
+        auto it = unique(al(plate));
+        plate.resize(it-plate.begin());//same size plates in one stack seem as only one
+
+        //relabel
+        int ith = -1;//ith bigger plate
+        set<pii>s;
+        map<int,int>mp;
+
+        for(int i=0;i<plate.size();i++){
+            s.insert(plate[i]);//RB-tree
+        }
+
+        for(auto x:s){
+            if(!_cnt[x.F])ith++;
+            mp[x.F] = ith;
+            _cnt[x.F] = 1;//showed up
+        }
+
+        for(int i=0;i<plate.size();i++){
+            plate[i].F = mp[plate[i].F];//relabel
+        }
+
+        set<int>szid[2505];
+        set<int>szs;
+
+        for(int i=0;i<plate.size();i++){
+            szs.insert(plate[i].F);//all sizes
+            sz[plate[i].F]++;//how many plates in ith size
+            szid[plate[i].F].insert(plate[i].S);//indexes in ith size stack
+        }
+
+        int nown = szs.size();//how many sizes
+
+    //  base case : f(0,j) = |S(0)| for all j in S(0)
+        for(auto x : szid[0]){
+            dp[0][x] = sz[0];
+        }
+
+    /*
+        if |S(i)| > 1
+                f(i,j) = min{
+                                  f(i-1,k) + (|S(i)| - 1)         , if k!=j  &&  k in S(i)
+                                  f(i-1,k) + (|S(i)| - 1) + 1    , if k=j    | |   k not in S(i)        
+                         }for all k in S(i-1)
+        else if |S(i)| == 1
+             f(i, j) = min{ 
+                                f(i-1, k) + 1   ,j != k
+                                f(i-1, k)        ,j = k
+                        }for all j in S(i-1)
+    */
+        for(int i=1;i<=nown-1;i++){
+            for(auto j : szid[i]){
+
+                if(sz[i]>1){
+
+                    for(auto k : szid[i-1]){
+
+                        if(k != j)
+                            dp[i][j] = min(dp[i][j] , dp[i-1][k] + sz[i]-1);
+                        else if(k==j || !szid[i].count(k))
+                            dp[i][j] = min(dp[i][j] , dp[i-1][k] + sz[i]-1+1);
+
+                    }
+
+                }
+
+                else if(sz[i]==1){
+
+                    for(auto k:szid[i-1]){
+
+                        if(k != j)
+                            dp[i][j]=min(dp[i][j] , dp[i-1][k]+1);             
+                        else if(k==j)
+                            dp[i][j]=min(dp[i][j] , dp[i-1][k]);
+
+                    }
+
+                }
+            }
+        }
+
+
+
+        int ans=0;
+        int convert=INF;
+        for(auto j : szid[nown-1])
+            convert = min(convert ,dp[nown-1][j]);
+
+        ans = 2*convert - 1 - n;
+        kase++;
+        cout << "Case " << kase << ": " << ans << endl;
+    }
+}
