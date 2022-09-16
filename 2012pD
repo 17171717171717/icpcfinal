@@ -1,0 +1,195 @@
+//17
+#include<bits/stdc++.h>
+using namespace std;
+#define F first
+#define S second
+#define vec vector
+using pii = pair<int, int>;
+using ll = long long;
+#define eb emplace_back
+#define al(x) x.begin(), x.end()
+double fcmp(double a, double b, double eps = 1e-9) {
+    if (fabs(a-b) < eps) return 0;
+    return (a > b)*2-1;
+}
+const int INF = 0x3f3f3f3f;
+struct pt{
+
+    double x,y;
+
+    pt(){}
+    pt(double x,double y): x(x),y(y) {}
+    
+    pt operator+(pt src){
+        return pt(x+src.x,y+src.y);
+    }
+
+    pt operator-(pt src){
+        return pt(x-src.x,y-src.y);
+    }
+
+    double operator*(pt src){//dot product
+        return x*src.x + y*src.y;
+    }
+
+    pt operator*(double src){
+        return pt(x*src,y*src);
+    }        
+
+    double operator^(pt src){//cross
+        return x*src.y-y*src.x;
+    }
+
+    bool operator==(pt src){
+        return(x==src.x && y==src.y);
+    }
+
+};
+
+struct line{
+    pt sp,ep;
+
+    line(){}
+    line(pt sp,pt ep): sp(sp),ep(ep) {}
+
+    double cp(pt src){
+        return (ep-sp) ^ (src-sp);//cross product
+    }
+
+};
+vec<ll>ans(200);
+/*
+ll kmp(string S, string T) {
+    string tmp = T + "@" + S;
+    
+    vec<int> count(tmp.size(), -1);
+    
+    int ret = 0;
+    for (int i = 1; i < tmp.size(); i++) {
+        int len = count[i-1];
+        
+        while (len != -1) {
+            if (tmp[i] == tmp[len+1])
+                break;
+            else len = count[len];
+        }
+        
+        if (tmp[i] == tmp[len+1]) count[i] = len + 1;
+        else count[i] = -1;
+            
+        if (count[i]+1 == T.size()) ret++;
+    }
+    
+    return ret;
+}
+*/
+
+ll kmp(string s,string t){//find t in s
+    int ss = s.length();
+    int tt = t.length();
+    if(ss==0 || tt==0 || ss<tt) return 0;
+    ll cnt=0;
+
+    int i=0,j=-1;
+    int nxt[tt+1];
+    nxt[0] = -1;
+    while(i<tt){
+        if(j==-1 || t[i]==t[j]){
+            i++;
+            j++;
+            nxt[i] = j;
+        }
+        else j = nxt[j];
+    }
+    i=0,j=0;
+    while(i<ss){
+        if(s[i] == t[j] || j==-1){
+            i++;
+            j++;
+        }
+        else j = nxt[j];
+
+        if(j == tt){
+            cnt++;
+            j = nxt[j-1];
+            i--;
+        }
+    }
+    /*
+    for(int i=0;i<tt+1;i++){
+        nxt[i] = -1;
+    }
+    int j = -1;
+    for(int i=1;i<tt+1;i++){//failure func
+        if(j!=-1 && t[i] != t[j+1]){
+            j = nxt[j];    
+        }//last one
+        //ABCAB
+        //-1-1-1-01 
+        //i=4 , j=nxt[3]=0,nxt[4]=1
+        if(t[i]==t[j+1]) j++;
+        nxt[i] = j;
+    }
+    for(int i=0,j=-1; i<ss;i++){//kmp
+        while(j!=-1 && s[i] != t[j+1]) j = nxt[j];
+        if(s[i] == t[j+1]){
+            j++;
+        }
+        if(j == tt-1) {
+            cnt++;
+            j = nxt[j];
+        }
+    }
+    */
+    return cnt;
+
+}
+
+
+
+int main(){
+    int kase=0;
+    int n;
+    string p;
+    while(cin >> n >> p){
+
+        vec<string>str={"0","1"};//F[0],F[1],,,,0,1,10,101,10110
+        kase++;
+
+        while(str.back().size() < p.size() ){//first Fib string.len > p.len
+            str.eb(str.back() + str[str.size()-2]);
+        }
+
+
+        if(str.size() > n){//f(n)
+            cout << "Case " << kase << ": " << kmp(str[n], p) << endl;
+        }
+        else{
+            ans[str.size()-1] = kmp(str.back() , p);//g(n+1)
+
+            string pre = str.back().substr(0,p.size()-1);//last p-1 of f(n) 
+            string suf = str.back().substr(str.back().size() - p.size() + 1);//first p-1 of f(n+1)
+
+            str.eb(str.back() + str[str.size()-2]);//f(n+2)
+            ans[str.size()-1] = kmp(str.back() , p);//g(n+2)
+
+            string suff = str.back().substr(str.back().size() - p.size() + 1);
+
+            ll odd = kmp(suff+pre , p);//g(n+3)
+            ll even = kmp(suf+pre , p);//g(n+4)
+            ll t = str.size();
+
+            //g(n+3) = g(n+3+2i)
+            //g(n+4) = g(n+4+2i) for all i >= 1
+            while(t<=n){
+                
+                ans[t] = ans[t-1] + ans[t-2] + odd;
+                swap(odd,even);
+                t++;
+            }
+
+            cout << "Case " << kase << ": " << ans[n] << endl;
+        }
+    }
+}
+
