@@ -1,0 +1,80 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+pair<string ,int>ins[50];
+vector<int> ans;
+int n;
+
+bool check(int pp){
+	bool st = false;//something change
+	int wallet = 0;//must be divisible and 'unknown is it divisible',
+
+	//collect is pointless
+	//pay in out
+	for(int i=0;i<n;i++){
+
+		if (ins[i].first == "PAY"){
+			wallet += ins[i].second;
+		}
+
+		if (ins[i].first == "IN"){
+			if(st){
+				if(wallet % pp != 0) return false;
+			}
+			st = true;
+			pp += ins[i].second;
+			wallet = 0;
+		}
+
+	    if(ins[i].first == "OUT"){
+	        if(st){
+	        	if(wallet % pp != 0) return false;
+	            }
+
+	        st = true;
+	        pp = pp - ins[i].second;
+
+	        if(pp <= 0) return false;//at least one person
+	        wallet = 0;
+	    }
+	}
+
+	return true;
+
+}
+int main() {
+	while (cin >> n){
+		if (n==0) break;
+		ans.clear();
+        for(int i=0 ; i<n ; i++){
+            cin >> ins[i].first >> ins[i].second;
+        }
+
+
+
+        for(int i=1 ; i<=100000 ; i++) //if pay 20 * 5k <= 100k
+        {
+            if(check(i)){
+                ans.push_back(i);
+            }
+
+        }
+
+        if(ans.size()==0){
+            cout << "IMPOSSIBLE" << endl;
+        }
+
+     	  //6~100k , ans[0]=6
+        else if(ans[ans.size()-1]==100000){
+            cout<< "SIZE >= " << ans[0] << endl;
+		}
+
+        else{
+            for(int i=0 ; i<ans.size()-1 ; i++){
+                cout << ans[i] << " ";
+            }
+            cout << ans[ans.size()-1] << endl;
+		}
+	}
+	return 0;
+}
