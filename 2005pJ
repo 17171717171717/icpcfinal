@@ -1,0 +1,124 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int main(){
+    int n,k,kasecnt=0;
+
+    while(1){
+        cin >> n >> k;
+        if(n == 0 && k==0) break;
+        
+        //for record and preprocessing
+        vector<long long> cus((1<<n));
+        int pp;
+        for(int i=0;i<n;i++){
+            cin >> pp;
+            cus[(1<<i)] = pp;
+        }// 10000 =PP,01000=PP......
+
+
+        //intersection address
+
+        int m;
+        cin >> m;//common areas process
+        vector<int>cover;
+
+        for(int i=0;i<m;i++){
+            int common;
+            cin >> common;
+            int id=0;//common area id :00110 means (2,3)have common area
+            for(int j=0;j<common;j++){
+                int idx;
+                cin >> idx;
+                idx--;//0 base
+                id += (1<<idx);//00110,00101....
+            }
+            cin >> cus[id];
+            for(int j=0;j<n;j++){
+                if(((1<<j) & id ) != 0){//eg.00100 & 00110
+                    cus[(1<<j)] = cus[(1<<j)] - cus[id];//00100=15 -00110=7 ---> 00100=8(only t3)
+                }
+            }
+            cover.emplace_back(id);
+        }
+
+        //algo
+        int answer=0;
+        vector<int>ans(k);
+        //00000 ~ 11111,,,eg.11010
+        //C(n,k)
+        //eg.11010
+        //10000+01000+00010
+        //there is common area within the tower 11010
+        //better ans:customer bigger -> tower index
+        for(int i=0;i<(1<<n);i++){
+            //nowanswer
+            
+            //find cnt match k
+            int cnt =0;
+            int curans = 0;
+            for(int j=0;j<n;j++){
+                if(((1<<j)&i) != 0) cnt++;
+            }
+            
+            if(cnt != k) continue;
+
+            //
+            
+            for(int j=0;j<n;j++){
+                if(((1<<j)&i)!=0){
+                    curans += cus[(1<<j)];
+                }
+            }
+            for(int j=0;j<m;j++){
+                if((cover[j]& i)!=0){
+                    curans += cus[cover[j]];
+                }
+            }
+
+            //
+            if(curans>answer){
+                answer = curans;
+                ans.clear();
+                for(int j=0;j<n;j++){
+                    if((i & (1<<j)) !=0){
+                        ans.emplace_back(j);
+                    }
+                }
+            }else if(curans==answer){
+                vector<int> curvec;
+                for(int g=0;g<n;g++){
+                    if((i & (1<<g)) !=0){
+                    curvec.emplace_back(g);
+                    }
+                }
+                bool change = false;
+                for(int g=0;g<n;g++){
+                    /*if(ans[g]<curvec[g]){
+                        ans = curvec;
+                        break
+                    }*///:NO WAY!, if > also need to be stop！！
+                    if(ans[g]!=curvec[g]){
+                        if(ans[g] > curvec[g]){
+                            ans = curvec;
+                        }
+                        break;
+                    }
+                }
+            }
+
+        }
+
+        //output
+        kasecnt ++;
+        cout << "Case Number  " << kasecnt << endl;
+        cout << "Number of Customers: " << answer << endl;
+        cout << "Locations recommended:";
+        for(int& a: ans)
+            cout << " " << a + 1;
+        cout << endl;
+        cout << endl;
+
+    }
+    return 0;
+}
